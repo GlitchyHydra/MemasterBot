@@ -9,10 +9,10 @@ import ru.spbstu.competition.protocol.data.*
 
 object Arguments {
     @Option(name = "-u", usage = "Specify server url")
-    var url: String = ""
+    var url: String = "kotoed.icc.spbstu.ru"
 
     @Option(name = "-p", usage = "Specify server port")
-    var port: Int = -1
+    var port: Int = 50004
 
     fun use(args: Array<String>): Arguments =
             CmdLineParser(this).parseArgument(*args).let{ this }
@@ -21,7 +21,7 @@ object Arguments {
 fun main(args: Array<String>) {
     Arguments.use(args)
 
-    println("Hi, I am Average Joe, the ultimate punter!")
+    println("Hello, ma bois!!!")
 
     // Протокол обмена с сервером
     val protocol = Protocol(Arguments.url, Arguments.port)
@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     // Джо очень умный чувак, вот его ум
     val intellect = Intellect(gameState, protocol)
 
-    protocol.handShake("Average Joe, yo!")
+    protocol.handShake("MemasterBot")
     val setupData = protocol.setup()
     gameState.init(setupData)
 
@@ -44,11 +44,11 @@ fun main(args: Array<String>) {
             is GameResult -> {
                 println("The game is over!")
                 val myScore = message.stop.scores[protocol.myId]
-                println("Joe scored ${myScore.score} points!")
+                println("I'm scored ${myScore.score} points!")
                 break@gameloop
             }
             is Timeout -> {
-                println("Joe too slow =(")
+                println("Dat Boi too slow =(")
             }
             is GameTurnMessage -> {
                 for(move in message.move.moves) {
@@ -60,8 +60,8 @@ fun main(args: Array<String>) {
             }
         }
 
-        println("Joe thinkin'")
+        println("Boi thinkin'")
         intellect.makeMove()
-        println("Joe genius!")
+        println("Boi, I'm genius!")
     }
 }
