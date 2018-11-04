@@ -22,15 +22,16 @@ class Intellect(val state: State, val protocol: Protocol) {
                 }
                 MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
             }
-        } else {
-            MinesAndRivers.mapOfMines.values.map { riverMap ->
-                riverMap.keys.map { river ->
-                    if (state.rivers[river] != RiverState.Neutral) {
-                        riverMap.remove(river)
-                    }
-                }
-            }
         }
+//        } else {
+//            MinesAndRivers.mapOfMines.values.map { riverMap ->
+//                riverMap.keys.map { river ->
+//                    if (state.rivers[river] != RiverState.Neutral) {
+//                        riverMap.remove(river)
+//                    }
+//                }
+//            }
+//        }
 
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
@@ -97,14 +98,15 @@ class Intellect(val state: State, val protocol: Protocol) {
         return result
     }
 
-    private fun mineNext(): Int {
-        for (mine in minePriorityData)
-            if (!takenMines.contains(mine)) {
-                takenMines.add(mine)
-                return mine
-            }
-        return -1
-    }
+//    private fun mineNext(): Int {
+//        for (mine in minePriorityData)
+//            if (!takenMines.contains(mine)) {
+//                takenMines.add(mine)
+//                return mine
+//            }
+//        return -1
+//    }
+
     private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
         val begin = river.key.target
