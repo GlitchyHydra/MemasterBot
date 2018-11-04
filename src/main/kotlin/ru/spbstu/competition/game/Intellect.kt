@@ -84,6 +84,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
+    // вроде как она должна считать сколько рек около шахт, но не задалось
     private fun minePriority(state: State): List<Int> {
         val data = mutableMapOf<Int, Int>()
         val result = mutableListOf<Int>()
@@ -102,6 +103,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         return result
     }
 
+    // функция, которая проверяет реку на тупиковость, то есть нет иного нейтрального выхода
     private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
         val begin = river.key.target
@@ -112,6 +114,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         return ourTry == null
     }
 
+    // функция ради функции
     private fun move(source:Int, target:Int){
         protocol.claimMove(source, target)
     }
