@@ -25,13 +25,13 @@ class Intellect(val state: State, val protocol: Protocol) {
         } else {
             MinesAndRivers.mapOfMines.map { (mine, riverMap) ->
                 riverMap.map { (river, riverState) ->
-                    if (riverState.name != "Neutral") {
+                    if (state.rivers[river] != RiverState.Neutral) {
                         riverMap.remove(river)
                     }
                 }
             }
         }
-        
+
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
