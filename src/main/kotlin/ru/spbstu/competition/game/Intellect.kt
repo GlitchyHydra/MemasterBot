@@ -87,11 +87,12 @@ class Intellect(val state: State, val protocol: Protocol) {
         var min = 10000
         var target = -1
         for (mine in data)
-            if (mine.value < min) {
+            if (mine.value < min && state.rivers.entries.find { (river, type) ->
+                        type == RiverState.Our && (river.source == mine.key || river.target == mine.key)} == null) {
                 min = mine.value
                 target = mine.key
             }
-        return state.rivers.entries.find { (river, it) ->
+        return state.rivers.entries.find { (river, _) ->
             river.source == target || river.target == target
         }!!.key
     }
