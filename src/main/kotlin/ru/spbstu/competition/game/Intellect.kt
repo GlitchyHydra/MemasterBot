@@ -3,10 +3,11 @@ package ru.spbstu.competition.game
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
 import java.util.*
+import kotlin.collections.HashMap
 
 class MinesAndRivers {
     companion object {
-        val mapOfMines: TreeMap<Int, MutableMap<River, RiverState>> = TreeMap()
+        val mapOfMines: TreeMap<Int, HashMap<River, RiverState>> = TreeMap()
     }
 }
 
@@ -20,15 +21,13 @@ class Intellect(val state: State, val protocol: Protocol) {
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
                     (river.source == m || river.target == m) && riverState == RiverState.Neutral
                 }
-                MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
+                val k = HashMap<River, RiverState>()
+                k.putAll(tryToFindNearRivers)
+                MinesAndRivers.mapOfMines[m] = k
             }
         } else {
             MinesAndRivers.mapOfMines.values.map { riverMap ->
-                riverMap.keys.map { river ->
-                    if (state.rivers[river] != RiverState.Neutral) {
-                        riverMap.remove(river)
-                    }
-                }
+                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
             }
         }
 
