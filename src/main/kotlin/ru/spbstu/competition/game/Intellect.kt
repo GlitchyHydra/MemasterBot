@@ -38,7 +38,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         val try3 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites || river.target in ourSites)
         }
-        if (try3 != null && !deadEnd(try3, state)) return protocol.claimMove(try3.key.source, try3.key.target)
+        if (try3 != null && !deadEnd(try3)) return protocol.claimMove(try3.key.source, try3.key.target)
 
 //        val enemySites = state
 //                .rivers
@@ -61,13 +61,30 @@ class Intellect(val state: State, val protocol: Protocol) {
         val try6 = state.rivers.entries.find { (_, riverState) ->
             riverState == RiverState.Neutral
         }
-        if (try6 != null && !deadEnd(try6, state)) return protocol.claimMove(try6.key.source, try6.key.target)
+        if (try6 != null && !deadEnd(try6)) return protocol.claimMove(try6.key.source, try6.key.target)
 
         // (╯°□°)╯ ┻━┻
         protocol.passMove()
     }
 
-    private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>, state: State): Boolean {
+    private fun minePriority():Int {
+        val data = mutableMapOf<Int, Int>()
+        for (mine in state.mines){
+           val rivers =  state.rivers.entries.filter {
+               (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral}
+            data[mine] = rivers.size
+        }
+        var min = 10000
+        var target = -1
+        for (obj in data)
+            if (obj.value < min) {
+                min = obj.value
+                target = obj.key
+            }
+        return target
+    }
+
+    private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
         val begin = river.key.target
 
