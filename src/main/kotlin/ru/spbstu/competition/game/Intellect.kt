@@ -23,6 +23,7 @@ class Intellect(val state: State, val protocol: Protocol) {
                 MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
             }
         }
+        // в итоге пока этот кусок не работает, но когда нибудь точно сможет)))
 //        } else {
 //            MinesAndRivers.mapOfMines.values.map { riverMap ->
 //                riverMap.keys.map { river ->
@@ -33,44 +34,47 @@ class Intellect(val state: State, val protocol: Protocol) {
 //            }
 //        }
 
+        // Если река между двумя шахтами - берём
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
         if (try0 != null) return move(try0.key.source, try0.key.target)
 
-        // If there is a free river near a mine, take it!
+        // Если есть свободная река около шахты - берём
         val try1 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)
         }
         if (try1 != null) return move(try1.key.source, try1.key.target)
 
-        // Look at all our pointsees
+        // Здеся храняться данные о наших и чужих точках
         val ourSites = state.our.sites
-//        val enemySites = state.enemy.sites
+        val enemySites = state.enemy.sites
 
-        // If there is a river between two our pointsees, take it!
+        // Если есть свободная река между нашими точками - берём
         val try2 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites && river.target in ourSites)
         }
         if (try2 != null) return move(try2.key.source, try2.key.target)
 
-        // If there is a river near our pointsee, take it!
+        // Если есть свободная река около нашеё точки - берём (с учётом тупика!)
         val try3 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites || river.target in ourSites)
         }
         if (try3 != null && !deadEnd(try3)) return move(try3.key.source, try3.key.target)
 
-//        val try4 = state.rivers.entries.find { (river, riverState) ->
-//            riverState == RiverState.Neutral && river.source in enemySites && river.target in enemySites
-//        }
-//        if (try4 != null) return move(try4.key.source, try4.key.target)
-//
-//        val try5 = state.rivers.entries.find { (river, riverState) ->
-//            riverState == RiverState.Neutral && (river.source in enemySites || river.target in enemySites)
-//        }
-//        if (try5 != null) return move(try5.key.source, try5.key.target)
+        // Если есть река между двух вражеских точек - берём
+        val try4 = state.rivers.entries.find { (river, riverState) ->
+            riverState == RiverState.Neutral && river.source in enemySites && river.target in enemySites
+        }
+        if (try4 != null) return move(try4.key.source, try4.key.target)
 
-        // Bah, take anything left
+        // Если есть точка около вражеской точки - берём
+        val try5 = state.rivers.entries.find { (river, riverState) ->
+            riverState == RiverState.Neutral && (river.source in enemySites || river.target in enemySites)
+        }
+        if (try5 != null) return move(try5.key.source, try5.key.target)
+
+        // Берём любую реку (с учётом тупика!)
         val try6 = state.rivers.entries.find { (_, riverState) ->
             riverState == RiverState.Neutral
         }
@@ -101,12 +105,10 @@ class Intellect(val state: State, val protocol: Protocol) {
     private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
         val begin = river.key.target
-
         val filtered = state.rivers.filter { it.key.source == end || it.key.target == end }
         val ourTry = filtered.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source != begin || river.target != begin)
         }
-
         return ourTry == null
     }
 
