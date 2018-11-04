@@ -102,7 +102,7 @@ class Intellect(val state: State, val protocol: Protocol) {
     private fun findMinimalRoad(begin: Int, end: Int): Map<Int, VertexInfo> {
         val info = mutableMapOf<Int, VertexInfo>()
         for (vertex in getNeighbors(begin)) {
-            info[vertex.target] = VertexInfo(vertex.target, 0, null)
+            info[vertex] = VertexInfo(vertex, 0, begin)
         }
         val fromInfo = VertexInfo(begin, 0, null)
         val queue = PriorityQueue<VertexInfo>()
@@ -113,12 +113,12 @@ class Intellect(val state: State, val protocol: Protocol) {
             val currentInfo = queue.poll()
             val currentVertex = currentInfo.vertex
             for (vertex in getNeighbors(currentVertex)) {
-                if (vertex.source == end) stop = true
+                if (vertex == end) stop = true
                 val newDistance = info[currentVertex]!!.distance + 1
-                if (info[vertex.source]!!.distance > newDistance) {
-                    val newInfo = VertexInfo(vertex.source, newDistance, currentVertex)
+                if (info[vertex]!!.distance > newDistance) {
+                    val newInfo = VertexInfo(vertex, newDistance, currentVertex)
                     queue.add(newInfo)
-                    info[vertex.source] = newInfo
+                    info[vertex] = newInfo
                 }
 
             }
@@ -127,11 +127,11 @@ class Intellect(val state: State, val protocol: Protocol) {
         return info
     }
 
-    private fun getNeighbors(vertex: Int): List<River> = state
+    private fun getNeighbors(vertex: Int): List<Int> = state
             .rivers
             .entries
             .filter { it.key.source == vertex && it.value == RiverState.Neutral }
-            .flatMap { listOf(it.key) }
+            .flatMap { listOf(it.key.target) }
 
 }
 
