@@ -2,13 +2,36 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
+import java.util.*
+
+class MinesAndRivers {
+    companion object {
+        val mapOfMines: TreeMap<Int, MutableMap<River, RiverState>> = TreeMap()
+    }
+}
 
 class Intellect(val state: State, val protocol: Protocol) {
 
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
-
+        if (MinesAndRivers.mapOfMines.isEmpty()) {
+            state.mines.map { m ->
+                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
+                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
+                }
+                MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
+            }
+        } else {
+            MinesAndRivers.mapOfMines.map { (mine, riverMap) ->
+                riverMap.map { (river, riverState) ->
+                    if (riverState.name != "Neutral") {
+                        riverMap.remove(river)
+                    }
+                }
+            }
+        }
+        
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
