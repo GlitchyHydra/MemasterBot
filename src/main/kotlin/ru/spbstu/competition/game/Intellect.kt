@@ -2,18 +2,35 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
+import java.util.*
+
+class MinesAndRivers {
+    companion object {
+        val mapOfMines: TreeMap<Int, MutableMap<River, RiverState>> = TreeMap()
+    }
+}
 
 class Intellect(val state: State, val protocol: Protocol) {
 
-    private var minePriorityData = listOf<Int>()
-    private val takenMines = mutableSetOf<Int>()
-    private var next = -1
-
     fun makeMove() {
-        // я вообще не понимаю как оно тут обновляется
-        minePriorityData = minePriority(state)
-        next = mineNext()
-
+        // Joe is like super smart!
+        // Da best strategy ever!
+        if (MinesAndRivers.mapOfMines.isEmpty()) {
+            state.mines.map { m ->
+                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
+                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
+                }
+                MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
+            }
+        } else {
+            MinesAndRivers.mapOfMines.values.map { riverMap ->
+                riverMap.keys.map { river ->
+                    if (state.rivers[river] != RiverState.Neutral) {
+                        riverMap.remove(river)
+                    }
+                }
+            }
+        }
 
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
