@@ -23,8 +23,8 @@ class Intellect(val state: State, val protocol: Protocol) {
                 MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
             }
         } else {
-            MinesAndRivers.mapOfMines.map { (mine, riverMap) ->
-                riverMap.map { (river, riverState) ->
+            MinesAndRivers.mapOfMines.values.map { riverMap ->
+                riverMap.keys.map { river ->
                     if (state.rivers[river] != RiverState.Neutral) {
                         riverMap.remove(river)
                     }
