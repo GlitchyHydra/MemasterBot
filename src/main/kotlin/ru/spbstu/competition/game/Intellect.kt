@@ -20,19 +20,15 @@ class Intellect(val state: State, val protocol: Protocol) {
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
                     (river.source == m || river.target == m) && riverState == RiverState.Neutral
                 }
-                MinesAndRivers.mapOfMines[m] = tryToFindNearRivers.toMutableMap()
+                val k = HashMap<River, RiverState>()
+                k.putAll(tryToFindNearRivers)
+                MinesAndRivers.mapOfMines[m] = k
+            }
+        } else {
+            MinesAndRivers.mapOfMines.values.map { riverMap ->
+                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
             }
         }
-        // в итоге пока этот кусок не работает, но когда нибудь точно сможет)))
-//        } else {
-//            MinesAndRivers.mapOfMines.values.map { riverMap ->
-//                riverMap.keys.map { river ->
-//                    if (state.rivers[river] != RiverState.Neutral) {
-//                        riverMap.remove(river)
-//                    }
-//                }
-//            }
-//        }
 
         // Если река между двумя шахтами - берём
         val try0 = state.rivers.entries.find { (river, riverState) ->
@@ -84,6 +80,22 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
+    private fun nextTurn(): River {
+        val data = mutableMapOf<Int, Int>()
+        for (mine in state.mines)
+            data[mine] = MinesAndRivers.mapOfMines.getValue(mine).size
+        var min = 10000
+        var target = -1
+        for (mine in data)
+            if (mine.value < min) {
+                min = mine.value
+                target = mine.key
+            }
+        return state.rivers.entries.find { (river, it) ->
+            river.source == target || river.target == target
+        }!!.key
+    }
+
     // вроде как она должна считать сколько рек около шахт, но не задалось
     private fun minePriority(state: State): List<Int> {
         val data = mutableMapOf<Int, Int>()
@@ -115,7 +127,7 @@ class Intellect(val state: State, val protocol: Protocol) {
     }
 
     // функция ради функции
-    private fun move(source:Int, target:Int){
+    private fun move(source: Int, target: Int) {
         protocol.claimMove(source, target)
     }
 
