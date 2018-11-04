@@ -11,7 +11,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         // Da best strategy ever!
         val b = state.rivers.keys
         val a = findMinimalRoad(b.first().source, b.last().source)
-        println("${b.first().source}:${b.last().source} [${a.values.forEach { print("[${it.prev}, ${it.vertex}, ${it.distance}], ") }}]")
+        println("${b.first().source}:${b.last().target} [${a.values.forEach { print("[${it.prev}, ${it.vertex}, ${it.distance}], ") }}]")
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
@@ -102,7 +102,7 @@ class Intellect(val state: State, val protocol: Protocol) {
     private fun findMinimalRoad(begin: Int, end: Int): Map<Int, VertexInfo> {
         val info = mutableMapOf<Int, VertexInfo>()
         for (vertex in getNeighbors(begin)) {
-            info[vertex] = VertexInfo(vertex, 0, begin)
+            info[vertex] = VertexInfo(vertex, 1, begin)
         }
         val fromInfo = VertexInfo(begin, 0, null)
         val queue = PriorityQueue<VertexInfo>()
@@ -113,16 +113,12 @@ class Intellect(val state: State, val protocol: Protocol) {
             val currentInfo = queue.poll()
             val currentVertex = currentInfo.vertex
             for (vertex in getNeighbors(currentVertex)) {
-                if (vertex == end) stop = true
                 val newDistance = info[currentVertex]!!.distance + 1
-                if (info[vertex]!!.distance > newDistance) {
-                    val newInfo = VertexInfo(vertex, newDistance, currentVertex)
-                    queue.add(newInfo)
-                    info[vertex] = newInfo
-                }
+                val newInfo = VertexInfo(vertex, newDistance, currentVertex)
+                queue.add(newInfo)
+                info[vertex] = newInfo
 
             }
-            if (stop) return info
         }
         return info
     }
