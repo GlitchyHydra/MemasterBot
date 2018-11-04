@@ -13,8 +13,8 @@ class MinesAndRivers {
 class Intellect(val state: State, val protocol: Protocol) {
 
     fun makeMove() {
-        // Joe is like super smart!
-        // Da best strategy ever!
+
+
         if (MinesAndRivers.mapOfMines.isEmpty()) {
             state.mines.map { m ->
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
@@ -36,13 +36,13 @@ class Intellect(val state: State, val protocol: Protocol) {
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
-        if (try0 != null) return protocol.claimMove(try0.key.source, try0.key.target)
+        if (try0 != null) return move(try0.key.source, try0.key.target)
 
         // If there is a free river near a mine, take it!
         val try1 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)
         }
-        if (try1 != null) return protocol.claimMove(try1.key.source, try1.key.target)
+        if (try1 != null) return move(try1.key.source, try1.key.target)
 
         // Look at all our pointsees
         val ourSites = state.our.sites
@@ -52,29 +52,29 @@ class Intellect(val state: State, val protocol: Protocol) {
         val try2 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites && river.target in ourSites)
         }
-        if (try2 != null) return protocol.claimMove(try2.key.source, try2.key.target)
+        if (try2 != null) return move(try2.key.source, try2.key.target)
 
         // If there is a river near our pointsee, take it!
         val try3 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites || river.target in ourSites)
         }
-        if (try3 != null && !deadEnd(try3)) return protocol.claimMove(try3.key.source, try3.key.target)
+        if (try3 != null && !deadEnd(try3)) return move(try3.key.source, try3.key.target)
 
 //        val try4 = state.rivers.entries.find { (river, riverState) ->
 //            riverState == RiverState.Neutral && river.source in enemySites && river.target in enemySites
 //        }
-//        if (try4 != null) return protocol.claimMove(try4.key.source, try4.key.target)
+//        if (try4 != null) return move(try4.key.source, try4.key.target)
 //
 //        val try5 = state.rivers.entries.find { (river, riverState) ->
 //            riverState == RiverState.Neutral && (river.source in enemySites || river.target in enemySites)
 //        }
-//        if (try5 != null) return protocol.claimMove(try5.key.source, try5.key.target)
+//        if (try5 != null) return move(try5.key.source, try5.key.target)
 
         // Bah, take anything left
         val try6 = state.rivers.entries.find { (_, riverState) ->
             riverState == RiverState.Neutral
         }
-        if (try6 != null && !deadEnd(try6)) return protocol.claimMove(try6.key.source, try6.key.target)
+        if (try6 != null && !deadEnd(try6)) return move(try6.key.source, try6.key.target)
 
         // (╯°□°)╯ ┻━┻
         protocol.passMove()
@@ -98,15 +98,6 @@ class Intellect(val state: State, val protocol: Protocol) {
         return result
     }
 
-//    private fun mineNext(): Int {
-//        for (mine in minePriorityData)
-//            if (!takenMines.contains(mine)) {
-//                takenMines.add(mine)
-//                return mine
-//            }
-//        return -1
-//    }
-
     private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
         val begin = river.key.target
@@ -117,6 +108,10 @@ class Intellect(val state: State, val protocol: Protocol) {
         }
 
         return ourTry == null
+    }
+
+    private fun move(source:Int, target:Int){
+        protocol.claimMove(source, target)
     }
 
 }
