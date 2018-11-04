@@ -5,9 +5,15 @@ import ru.spbstu.competition.protocol.data.River
 
 class Intellect(val state: State, val protocol: Protocol) {
 
+    private var minePriorityData = listOf<Int>()
+    private val takenMines = mutableSetOf<Int>()
+    private var next = -1
+
     fun makeMove() {
-        // Joe is like super smart!
-        // Da best strategy ever!
+        // я вообще не понимаю как оно тут обновляется
+        minePriorityData = minePriority(state)
+        next = mineNext()
+
 
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
@@ -56,23 +62,32 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
-    private fun minePriority():Int {
+    private fun minePriority(state: State): List<Int> {
         val data = mutableMapOf<Int, Int>()
-        for (mine in state.mines){
-           val rivers =  state.rivers.entries.filter {
-               (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral}
+        val result = mutableListOf<Int>()
+        for (mine in state.mines) {
+            val rivers = state.rivers.entries.filter {
+                (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral
+            }
             data[mine] = rivers.size
         }
-        var min = 10000
-        var target = -1
-        for (obj in data)
-            if (obj.value < min) {
-                min = obj.value
-                target = obj.key
-            }
-        return target
+        var i = 1
+        while (result.size != data.size) {
+            for (obj in data)
+                if (obj.value == i) result.add(obj.key)
+            i++
+        }
+        return result
     }
 
+    private fun mineNext(): Int {
+        for (mine in minePriorityData)
+            if (!takenMines.contains(mine)) {
+                takenMines.add(mine)
+                return mine
+            }
+        return -1
+    }
     private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
         val begin = river.key.target
