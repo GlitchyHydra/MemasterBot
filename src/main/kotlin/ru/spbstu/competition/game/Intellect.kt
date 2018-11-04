@@ -2,13 +2,16 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
+import java.util.*
 
 class Intellect(val state: State, val protocol: Protocol) {
 
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
-
+        val b = state.rivers.keys
+        val a = findMinimalRoad(b.first().source, b.last().source)
+        println("${b.first().source}:${b.last().source} [${a.values.forEach { print("[${it.prev}, ${it.vertex}, ${it.distance}], ") }}]")
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
@@ -56,11 +59,12 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
-    private fun minePriority():Int {
+    private fun minePriority(): Int {
         val data = mutableMapOf<Int, Int>()
-        for (mine in state.mines){
-           val rivers =  state.rivers.entries.filter {
-               (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral}
+        for (mine in state.mines) {
+            val rivers = state.rivers.entries.filter {
+                (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral
+            }
             data[mine] = rivers.size
         }
         var min = 10000
@@ -85,4 +89,50 @@ class Intellect(val state: State, val protocol: Protocol) {
         return ourTry == null
     }
 
+    class VertexInfo(
+            val vertex: Int,
+            val distance: Int,
+            val prev: Int?
+    ) : Comparable<VertexInfo> {
+        override fun compareTo(other: VertexInfo): Int {
+            return distance.compareTo(other.distance)
+        }
+    }
+
+    private fun findMinimalRoad(begin: Int, end: Int): Map<Int, VertexInfo> {
+        val info = mutableMapOf<Int, VertexInfo>()
+        for (vertex in getNeighbors(begin)) {
+            info[vertex.target] = VertexInfo(vertex.target, 0, null)
+        }
+        val fromInfo = VertexInfo(begin, 0, null)
+        val queue = PriorityQueue<VertexInfo>()
+        queue.add(fromInfo)
+        info[begin] = fromInfo
+        var stop = false
+        while (queue.isNotEmpty()) {
+            val currentInfo = queue.poll()
+            val currentVertex = currentInfo.vertex
+            for (vertex in getNeighbors(currentVertex)) {
+                if (vertex.source == end) stop = true
+                val newDistance = info[currentVertex]!!.distance + 1
+                if (info[vertex.source]!!.distance > newDistance) {
+                    val newInfo = VertexInfo(vertex.source, newDistance, currentVertex)
+                    queue.add(newInfo)
+                    info[vertex.source] = newInfo
+                }
+
+            }
+            if (stop) return info
+        }
+        return info
+    }
+
+    private fun getNeighbors(vertex: Int): List<River> = state
+            .rivers
+            .entries
+            .filter { it.key.source == vertex && it.value == RiverState.Neutral }
+            .flatMap { listOf(it.key) }
+
 }
+
+//ret Int
