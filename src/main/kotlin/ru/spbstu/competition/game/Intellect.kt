@@ -10,7 +10,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         // Da best strategy ever!
 
         val try0 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && river.source in state.mines && river.target in state.mines
+            riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
         if (try0 != null) return protocol.claimMove(try0.key.source, try0.key.target)
 
@@ -21,12 +21,8 @@ class Intellect(val state: State, val protocol: Protocol) {
         if (try1 != null) return protocol.claimMove(try1.key.source, try1.key.target)
 
         // Look at all our pointsees
-        val ourSites = state
-                .rivers
-                .entries
-                .filter { it.value == RiverState.Our }
-                .flatMap { listOf(it.key.source, it.key.target) }
-                .toSet()
+        val ourSites = state.our.sites
+//        val enemySites = state.enemy.sites
 
         // If there is a river between two our pointsees, take it!
         val try2 = state.rivers.entries.find { (river, riverState) ->
@@ -40,13 +36,6 @@ class Intellect(val state: State, val protocol: Protocol) {
         }
         if (try3 != null && !deadEnd(try3, state)) return protocol.claimMove(try3.key.source, try3.key.target)
 
-//        val enemySites = state
-//                .rivers
-//                .entries
-//                .filter { it.value == RiverState.Enemy }
-//                .flatMap { listOf(it.key.source, it.key.target) }
-//                .toSet()
-//
 //        val try4 = state.rivers.entries.find { (river, riverState) ->
 //            riverState == RiverState.Neutral && river.source in enemySites && river.target in enemySites
 //        }
