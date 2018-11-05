@@ -9,17 +9,6 @@ class Intellect(val state: State, val protocol: Protocol) {
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
-        val b = state.rivers.keys
-        println("${b.first().source}:${b.last().target}")
-        val a = findMinimalRoad(b.first().source, b.last().source)
-        a.forEachIndexed { ind, a ->
-            print("$ind ")
-            for (b in a) {
-                print("${b.toString()} ")
-            }
-        }
-        println()
-
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
