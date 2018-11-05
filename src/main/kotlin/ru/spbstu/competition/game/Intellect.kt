@@ -12,6 +12,9 @@ class MinesAndRivers {
 
 class Intellect(val state: State, val protocol: Protocol) {
 
+    private val setOfMines = mutableSetOf<Int>()
+    // private var haveNext = true
+
     fun makeMove() {
 
 
@@ -31,11 +34,13 @@ class Intellect(val state: State, val protocol: Protocol) {
         }
 
         val next = nextTurn()
-        if (next != -1){
-            val temp = MinesAndRivers.mapOfMines.getValue(next).entries.find { (_, type) ->
-                type == RiverState.Neutral
-            }
-            if (temp != null) move(temp.key.source, temp.key.target)
+        if (next != -1) {
+            val temp = state.rivers.entries.find { (river, type) ->
+                type == RiverState.Neutral && (river.source == next || river.target == next)
+            }!!
+            setOfMines.add(next)
+            move(temp.key.source, temp.key.target)
+
         }
 
         // Если река между двумя шахтами - берём
@@ -89,17 +94,15 @@ class Intellect(val state: State, val protocol: Protocol) {
     }
 
     private fun nextTurn(): Int {
-        val data = mutableMapOf<Int, Int>()
-        for (mine in state.mines)
-            data[mine] = MinesAndRivers.mapOfMines.getValue(mine).size
-        var min = 10000
         var target = -1
-        for (mine in data)
-            if (mine.value < min && state.rivers.entries.find { (river, type) ->
-                        type == RiverState.Our && (river.source == mine.key || river.target == mine.key)} == null) {
-                min = mine.value
-                target = mine.key
-            }
+        var i = 1
+        while (target == -1) {
+            for (mine in MinesAndRivers.mapOfMines.keys)
+                if (MinesAndRivers.mapOfMines.getValue(mine).size == i)
+                    target = mine
+            if (i > 30) break
+            i++
+        }
         return target
     }
 
