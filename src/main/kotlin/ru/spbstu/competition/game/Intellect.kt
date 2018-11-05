@@ -11,11 +11,50 @@ class MinesAndRivers {
 }
 
 class Intellect(val state: State, val protocol: Protocol) {
+    private val graph = createGraph()
+
+    private fun createGraph(): Graph{
+        val gp = GraphBuilder()
+        print("mamamamamama boiiiiiiii")
+        for ((river, _) in state.rivers){
+            val target = GraphBuilder.VertexImpl("${river.target}")
+            val source = GraphBuilder.VertexImpl("${river.source}")
+            gp.addVertex("${river.target}")
+            gp.addVertex("${river.source}")
+            gp.addConnection(source, target)
+        }
+        return gp.build()
+    }
 
     private val setOfMines = mutableSetOf<Int>()
     private var haveNext = true
 
     fun makeMove() {
+        // Joe is like super smart!
+        // Da best strategy ever!
+        val a = state.rivers.entries.first()
+        val b = graph.get("${a.key.source}")!!
+        println("${graph.shortestPath(b)}")
+        //find all mines and rivers near mines at beginning of game
+        //and fill this map
+        if (MinesAndRivers.mapOfMines.isEmpty()) {
+            state.mines.map { m ->
+                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
+                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
+                }
+                val k = HashMap<River, RiverState>()
+                k.putAll(tryToFindNearRivers)
+                MinesAndRivers.mapOfMines[m] = k
+            }
+
+        }
+        //remove from mines from map if cant capture (not neutral)
+        else {
+            MinesAndRivers.mapOfMines.values.map { riverMap ->
+                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
+            }
+        }
+
 
 
         if (MinesAndRivers.mapOfMines.isEmpty()) {
@@ -93,6 +132,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
+
     // использует mapOfMines для выбора приоритета захвата шахт (+- работает)
     private fun nextTurn(): Int {
         var target = -1
@@ -136,10 +176,11 @@ class Intellect(val state: State, val protocol: Protocol) {
         }
         return ourTry == null
     }
-
     // функция ради функции
     private fun move(source: Int, target: Int) {
         protocol.claimMove(source, target)
     }
 
 }
+
+//ret Int
