@@ -30,11 +30,8 @@ fun main(args: Array<String>) {
     // Джо очень умный чувак, вот его ум
     val intellect = Intellect(gameState, protocol)
 
-<<<<<<< .merge_file_a17780
     protocol.handShake("CordOfGlitches")
-=======
-    protocol.handShake("DDDDDMemasterBot")
->>>>>>> .merge_file_a19284
+
     val setupData = protocol.setup()
     gameState.init(setupData)
 

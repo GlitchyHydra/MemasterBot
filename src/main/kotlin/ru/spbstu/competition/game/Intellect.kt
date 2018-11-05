@@ -17,7 +17,7 @@ class Intellect(val state: State, val protocol: Protocol) {
     private fun createGraph(): Graph{
         val gp = GraphBuilder()
         print("mamamamamama boiiiiiiii")
-        for ((river, _) in state.rivers.entries){
+        for ((river, _) in state.rivers){
             val target = GraphBuilder.VertexImpl("${river.target}")
             val source = GraphBuilder.VertexImpl("${river.source}")
             gp.addVertex("${river.target}")
