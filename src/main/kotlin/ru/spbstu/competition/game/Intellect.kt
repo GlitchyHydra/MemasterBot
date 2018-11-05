@@ -3,12 +3,56 @@ package ru.spbstu.competition.game
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
 import java.util.*
+<<<<<<< HEAD
+=======
+import kotlin.collections.HashMap
+
+class MinesAndRivers {
+    companion object {
+        val mapOfMines: TreeMap<Int, HashMap<River, RiverState>> = TreeMap()
+    }
+}
+>>>>>>> Cord-Of-Glitches
 
 class Intellect(val state: State, val protocol: Protocol) {
+    private val graph = createGraph()
+
+    private fun createGraph(): Graph{
+        val gp = GraphBuilder()
+        for ((river, _) in state.rivers){
+            val target = GraphBuilder.VertexImpl("${river.target}")
+            val source = GraphBuilder.VertexImpl("${river.source}")
+            gp.addVertex("${river.target}")
+            gp.addVertex("${river.source}")
+            gp.addConnection(source, target)
+        }
+        return gp.build()
+    }
 
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
+<<<<<<< HEAD
+=======
+        val a = state.rivers.entries.first()
+        val b = graph.get("${a.key.source}")!!
+        println("${graph.shortestPath(b)}")
+        if (MinesAndRivers.mapOfMines.isEmpty()) {
+            state.mines.map { m ->
+                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
+                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
+                }
+                val k = HashMap<River, RiverState>()
+                k.putAll(tryToFindNearRivers)
+                MinesAndRivers.mapOfMines[m] = k
+            }
+        } else {
+            MinesAndRivers.mapOfMines.values.map { riverMap ->
+                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
+            }
+        }
+
+>>>>>>> Cord-Of-Glitches
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
