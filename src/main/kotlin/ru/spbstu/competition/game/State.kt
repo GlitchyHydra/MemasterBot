@@ -8,6 +8,7 @@ enum class RiverState { Our, Enemy, Neutral }
 
 class State {
     val rivers = mutableMapOf<River, RiverState>()
+    var dotsCount: Int = 0
     var mines = listOf<Int>()
     var myId = -1
     val our = OurSites(setOf())
@@ -21,6 +22,10 @@ class State {
         for (mine in setup.map.mines) {
             mines += mine
         }
+        dotsCount = rivers
+                .entries
+                .filter { it.value == RiverState.Neutral }
+                .flatMap { listOf(it.key.source) }.size
     }
 
     fun update(claim: Claim) {

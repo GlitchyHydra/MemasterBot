@@ -3,7 +3,7 @@ package ru.spbstu.competition.game
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
 import java.util.*
-import kotlin.collections.HashMap
+
 
 class MinesAndRivers {
     companion object {
@@ -12,10 +12,27 @@ class MinesAndRivers {
 }
 
 class Intellect(val state: State, val protocol: Protocol) {
+    private val graph = createGraph()
+
+    private fun createGraph(): Graph{
+        val gp = GraphBuilder()
+        print("mamamamamama boiiiiiiii")
+        for ((river, _) in state.rivers.entries){
+            val target = GraphBuilder.VertexImpl("${river.target}")
+            val source = GraphBuilder.VertexImpl("${river.source}")
+            gp.addVertex("${river.target}")
+            gp.addVertex("${river.source}")
+            gp.addConnection(source, target)
+        }
+        return gp.build()
+    }
 
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
+        val a = state.rivers.entries.first()
+        val b = graph.get("${a.key.source}")!!
+        println("${graph.shortestPath(b)}")
         if (MinesAndRivers.mapOfMines.isEmpty()) {
             state.mines.map { m ->
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
@@ -78,11 +95,12 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
-    private fun minePriority():Int {
+    private fun minePriority(): Int {
         val data = mutableMapOf<Int, Int>()
-        for (mine in state.mines){
-           val rivers =  state.rivers.entries.filter {
-               (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral}
+        for (mine in state.mines) {
+            val rivers = state.rivers.entries.filter {
+                (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral
+            }
             data[mine] = rivers.size
         }
         var min = 10000
@@ -106,5 +124,6 @@ class Intellect(val state: State, val protocol: Protocol) {
 
         return ourTry == null
     }
-
 }
+
+//ret Int
