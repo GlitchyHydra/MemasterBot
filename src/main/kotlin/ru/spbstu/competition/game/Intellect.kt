@@ -3,16 +3,13 @@ package ru.spbstu.competition.game
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
 import java.util.*
-<<<<<<< HEAD
-=======
-import kotlin.collections.HashMap
+
 
 class MinesAndRivers {
     companion object {
         val mapOfMines: TreeMap<Int, HashMap<River, RiverState>> = TreeMap()
     }
 }
->>>>>>> Cord-Of-Glitches
 
 class Intellect(val state: State, val protocol: Protocol) {
     private val graph = createGraph()
@@ -32,8 +29,6 @@ class Intellect(val state: State, val protocol: Protocol) {
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
-<<<<<<< HEAD
-=======
         val a = state.rivers.entries.first()
         val b = graph.get("${a.key.source}")!!
         println("${graph.shortestPath(b)}")
@@ -52,7 +47,6 @@ class Intellect(val state: State, val protocol: Protocol) {
             }
         }
 
->>>>>>> Cord-Of-Glitches
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }

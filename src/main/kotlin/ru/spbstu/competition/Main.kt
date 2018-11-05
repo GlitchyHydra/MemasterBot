@@ -12,11 +12,7 @@ object Arguments {
     var url: String = "kotoed.icc.spbstu.ru"
 
     @Option(name = "-p", usage = "Specify server port")
-<<<<<<< HEAD
-    var port: Int = 50002
-=======
     var port: Int = 50003
->>>>>>> Cord-Of-Glitches
 
     fun use(args: Array<String>): Arguments =
             CmdLineParser(this).parseArgument(*args).let{ this }
@@ -34,7 +30,7 @@ fun main(args: Array<String>) {
     // Джо очень умный чувак, вот его ум
     val intellect = Intellect(gameState, protocol)
 
-    protocol.handShake("DMemasterBot")
+    protocol.handShake("DDDDDMemasterBot")
     val setupData = protocol.setup()
     gameState.init(setupData)
 
