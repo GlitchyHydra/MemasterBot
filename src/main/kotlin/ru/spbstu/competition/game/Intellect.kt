@@ -30,6 +30,14 @@ class Intellect(val state: State, val protocol: Protocol) {
             }
         }
 
+        val next = nextTurn()
+        if (next != -1){
+            val temp = MinesAndRivers.mapOfMines.getValue(next).entries.find { (_, type) ->
+                type == RiverState.Neutral
+            }
+            if (temp != null) move(temp.key.source, temp.key.target)
+        }
+
         // Если река между двумя шахтами - берём
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
@@ -80,7 +88,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
-    private fun nextTurn(): River {
+    private fun nextTurn(): Int {
         val data = mutableMapOf<Int, Int>()
         for (mine in state.mines)
             data[mine] = MinesAndRivers.mapOfMines.getValue(mine).size
@@ -92,9 +100,7 @@ class Intellect(val state: State, val protocol: Protocol) {
                 min = mine.value
                 target = mine.key
             }
-        return state.rivers.entries.find { (river, _) ->
-            river.source == target || river.target == target
-        }!!.key
+        return target
     }
 
     // вроде как она должна считать сколько рек около шахт, но не задалось
