@@ -12,10 +12,26 @@ class MinesAndRivers {
 }
 
 class Intellect(val state: State, val protocol: Protocol) {
+    private val graph = createGraph()
+
+    private fun createGraph(): Graph{
+        val gp = GraphBuilder()
+        for ((river, _) in state.rivers){
+            val target = GraphBuilder.VertexImpl("${river.target}")
+            val source = GraphBuilder.VertexImpl("${river.source}")
+            gp.addVertex("${river.target}")
+            gp.addVertex("${river.source}")
+            gp.addConnection(source, target)
+        }
+        return gp.build()
+    }
 
     fun makeMove() {
         // Joe is like super smart!
         // Da best strategy ever!
+        val a = state.rivers.entries.first()
+        val b = graph.get("${a.key.source}")!!
+        println("${graph.shortestPath(b)}")
         if (MinesAndRivers.mapOfMines.isEmpty()) {
             state.mines.map { m ->
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
