@@ -12,12 +12,12 @@ class Intellect(val state: State, val protocol: Protocol) {
         val b = state.rivers.keys
         println("${b.first().source}:${b.last().target}")
         val a = findMinimalRoad(b.first().source, b.last().source)
-        a.forEachIndexed {ind, a ->
+        a.forEachIndexed { ind, a ->
             print("$ind ")
-                for (b in a){
-                    print("${b.toString()} ")
-                }
+            for (b in a) {
+                print("${b.toString()} ")
             }
+        }
         println()
 
         val try0 = state.rivers.entries.find { (river, riverState) ->
@@ -96,50 +96,6 @@ class Intellect(val state: State, val protocol: Protocol) {
 
         return ourTry == null
     }
-
-    class VertexInfo(val prev: Int?,
-                     val vertex: Int) {
-        override fun toString(): String {
-            return "[$prev, $vertex]"
-        }
-    }
-
-    //very slow
-    private fun findMinimalRoad(begin: Int, end: Int): List<List<VertexInfo>> {
-        val info = mutableListOf<MutableList<VertexInfo>>()
-        info.add(mutableListOf(VertexInfo(null, begin)))
-        info.add(mutableListOf())
-        var stop = true
-
-        for (vertex in getNeighbors(begin)) {
-            info.last().add(VertexInfo(begin, vertex))
-            if (vertex == end) stop = false
-
-        }
-        while (stop) {
-            val list = info.last()
-            val res = mutableListOf<VertexInfo>()
-            for (vertexInf in list) {
-                for (nextVertex in getNeighbors(vertexInf.vertex)) {
-                    res.add(VertexInfo(vertexInf.vertex, nextVertex))
-                    if (nextVertex == end) {
-                        stop = false
-                        break
-                    }
-                }
-                info.add(res)
-                if(stop) break
-            }
-        }
-        return info.toList()
-    }
-
-    private fun getNeighbors(vertex: Int): List<Int> = state
-            .rivers
-            .entries
-            .filter { it.key.source == vertex && it.value == RiverState.Neutral }
-            .flatMap { listOf(it.key.target) }
-
 }
 
 //ret Int
