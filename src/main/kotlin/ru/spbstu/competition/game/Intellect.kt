@@ -10,8 +10,16 @@ class Intellect(val state: State, val protocol: Protocol) {
         // Joe is like super smart!
         // Da best strategy ever!
         val b = state.rivers.keys
+        println("${b.first().source}:${b.last().target}")
         val a = findMinimalRoad(b.first().source, b.last().source)
-        println("${b.first().source}:${b.last().target} [${a.values.forEach { print("[${it.prev}, ${it.vertex}, ${it.distance}], ") }}]")
+        a.forEachIndexed {ind, a ->
+            print("$ind ")
+                for (b in a){
+                    print("${b.toString()} ")
+                }
+            }
+        println()
+
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
         }
@@ -89,38 +97,41 @@ class Intellect(val state: State, val protocol: Protocol) {
         return ourTry == null
     }
 
-    class VertexInfo(
-            val vertex: Int,
-            val distance: Int,
-            val prev: Int?
-    ) : Comparable<VertexInfo> {
-        override fun compareTo(other: VertexInfo): Int {
-            return distance.compareTo(other.distance)
+    class VertexInfo(val prev: Int?,
+                     val vertex: Int) {
+        override fun toString(): String {
+            return "[$prev, $vertex]"
         }
     }
 
-    private fun findMinimalRoad(begin: Int, end: Int): Map<Int, VertexInfo> {
-        val info = mutableMapOf<Int, VertexInfo>()
-        for (vertex in getNeighbors(begin)) {
-            info[vertex] = VertexInfo(vertex, 1, begin)
-        }
-        val fromInfo = VertexInfo(begin, 0, null)
-        val queue = PriorityQueue<VertexInfo>()
-        queue.add(fromInfo)
-        info[begin] = fromInfo
-        var stop = false
-        while (queue.isNotEmpty()) {
-            val currentInfo = queue.poll()
-            val currentVertex = currentInfo.vertex
-            for (vertex in getNeighbors(currentVertex)) {
-                val newDistance = info[currentVertex]!!.distance + 1
-                val newInfo = VertexInfo(vertex, newDistance, currentVertex)
-                queue.add(newInfo)
-                info[vertex] = newInfo
+    //very slow
+    private fun findMinimalRoad(begin: Int, end: Int): List<List<VertexInfo>> {
+        val info = mutableListOf<MutableList<VertexInfo>>()
+        info.add(mutableListOf(VertexInfo(null, begin)))
+        info.add(mutableListOf())
+        var stop = true
 
+        for (vertex in getNeighbors(begin)) {
+            info.last().add(VertexInfo(begin, vertex))
+            if (vertex == end) stop = false
+
+        }
+        while (stop) {
+            val list = info.last()
+            val res = mutableListOf<VertexInfo>()
+            for (vertexInf in list) {
+                for (nextVertex in getNeighbors(vertexInf.vertex)) {
+                    res.add(VertexInfo(vertexInf.vertex, nextVertex))
+                    if (nextVertex == end) {
+                        stop = false
+                        break
+                    }
+                }
+                info.add(res)
+                if(stop) break
             }
         }
-        return info
+        return info.toList()
     }
 
     private fun getNeighbors(vertex: Int): List<Int> = state
