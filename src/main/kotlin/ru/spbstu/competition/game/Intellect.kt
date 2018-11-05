@@ -33,15 +33,15 @@ class Intellect(val state: State, val protocol: Protocol) {
             }
         }
 
-        val next = nextTurn()
-        if (next != -1) {
-            val temp = state.rivers.entries.find { (river, type) ->
-                type == RiverState.Neutral && (river.source == next || river.target == next)
-            }!!
-            setOfMines.add(next)
-            move(temp.key.source, temp.key.target)
-
-        }
+//        val next = nextTurn()
+//        if (next != -1) {
+//            val temp = state.rivers.entries.find { (river, type) ->
+//                type == RiverState.Neutral && (river.source == next || river.target == next)
+//            }!!
+//            setOfMines.add(next)
+//            move(temp.key.source, temp.key.target)
+//
+//        }
 
         // Если река между двумя шахтами - берём
         val try0 = state.rivers.entries.find { (river, riverState) ->
