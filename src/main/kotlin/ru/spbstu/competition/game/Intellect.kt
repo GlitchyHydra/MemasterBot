@@ -33,6 +33,8 @@ class Intellect(val state: State, val protocol: Protocol) {
         val a = state.rivers.entries.first()
         val b = graph.get("${a.key.source}")!!
         println("${graph.shortestPath(b)}")
+        //find all mines and rivers near mines at beginning of game
+        //and fill this map
         if (MinesAndRivers.mapOfMines.isEmpty()) {
             state.mines.map { m ->
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
@@ -42,7 +44,10 @@ class Intellect(val state: State, val protocol: Protocol) {
                 k.putAll(tryToFindNearRivers)
                 MinesAndRivers.mapOfMines[m] = k
             }
-        } else {
+
+        }
+        //remove from mines from map if cant capture (not neutral)
+        else {
             MinesAndRivers.mapOfMines.values.map { riverMap ->
                 riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
             }
