@@ -11,30 +11,12 @@ class MinesAndRivers {
 }
 
 class Intellect(val state: State, val protocol: Protocol) {
-    private val graph = createGraph()
-
-    private fun createGraph(): Graph{
-        val gp = GraphBuilder()
-        print("mamamamamama boiiiiiiii")
-        for ((river, _) in state.rivers){
-            val target = GraphBuilder.VertexImpl("${river.target}")
-            val source = GraphBuilder.VertexImpl("${river.source}")
-            gp.addVertex("${river.target}")
-            gp.addVertex("${river.source}")
-            gp.addConnection(source, target)
-        }
-        return gp.build()
-    }
 
     private val setOfMines = mutableSetOf<Int>()
     private var haveNext = true
 
     fun makeMove() {
-        // Joe is like super smart!
-        // Da best strategy ever!
-        val a = state.rivers.entries.first()
-        val b = graph.get("${a.key.source}")!!
-        println("${graph.shortestPath(b)}")
+
         //find all mines and rivers near mines at beginning of game
         //and fill this map
         if (MinesAndRivers.mapOfMines.isEmpty()) {
@@ -55,32 +37,6 @@ class Intellect(val state: State, val protocol: Protocol) {
             }
         }
 
-
-
-        if (MinesAndRivers.mapOfMines.isEmpty()) {
-            state.mines.map { m ->
-                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
-                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
-                }
-                val k = HashMap<River, RiverState>()
-                k.putAll(tryToFindNearRivers)
-                MinesAndRivers.mapOfMines[m] = k
-            }
-        } else {
-            MinesAndRivers.mapOfMines.values.map { riverMap ->
-                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
-            }
-        }
-
-        val next = nextTurn()
-        if (next != -1) {
-            val temp = state.rivers.entries.find { (river, type) ->
-                type == RiverState.Neutral && (river.source == next || river.target == next)
-            }!!
-            setOfMines.add(next)
-            move(temp.key.source, temp.key.target)
-
-        }
 
         // Если река между двумя шахтами - берём
         val try0 = state.rivers.entries.find { (river, riverState) ->
