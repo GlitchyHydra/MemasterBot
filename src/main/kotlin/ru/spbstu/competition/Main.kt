@@ -12,7 +12,7 @@ object Arguments {
     var url: String = "kotoed.icc.spbstu.ru"
 
     @Option(name = "-p", usage = "Specify server port")
-    var port: Int = 50010
+    var port: Int = 50006
 
     fun use(args: Array<String>): Arguments =
             CmdLineParser(this).parseArgument(*args).let{ this }
@@ -27,14 +27,15 @@ fun main(args: Array<String>) {
     val protocol = Protocol(Arguments.url, Arguments.port)
     // Состояние игрового поля
     val gameState = State()
-    // Джо очень умный чувак, вот его ум
-    val intellect = Intellect(gameState, protocol)
+
 
     protocol.handShake("MemasterBot")
     val setupData = protocol.setup()
     gameState.init(setupData)
 
     println("Received id = ${setupData.punter}")
+
+    val intellect = Intellect(gameState, protocol)
 
     protocol.ready()
 

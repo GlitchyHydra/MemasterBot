@@ -1,127 +1,91 @@
 package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
-import ru.spbstu.competition.protocol.data.River
-import java.util.*
-
-class MinesAndRivers {
-    companion object {
-        val mapOfMines: TreeMap<Int, MutableSet<River>> = TreeMap()
-    }
-}
 
 class Intellect(val state: State, val protocol: Protocol) {
 
-    private val setOfMines = mutableSetOf<Int>()
-    private var nextMoveEnable = false
+    private var listOfMines = mutableListOf<MinesInfo>()
+    private var firstTime = true
 
     fun makeMove() {
 
-
-        if (MinesAndRivers.mapOfMines.isEmpty()) {
-            state.mines.map { m ->
-                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
-                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
+        if (listOfMines.isEmpty()) {
+            if (firstTime) {
+                for (mine in state.mines) {
+                    val temp = state.rivers.filter { (river, type) ->
+                        (river.target == mine || river.source == mine) && type == RiverState.Neutral
+                    }.keys.toMutableSet()
+                    listOfMines.add(MinesInfo(mine, temp))
                 }
-                val k = mutableSetOf<River>()
-                k.addAll(tryToFindNearRivers.keys)
-                MinesAndRivers.mapOfMines[m] = k
+                listSort()
             }
         } else {
-            MinesAndRivers.mapOfMines.values.map { riverMap ->
-                riverMap.removeIf { state.rivers[it] != RiverState.Neutral }
+            for (it in listOfMines) {
+                it.removeEnemyRivers(state.rivers)
+                if (it.riversCount() == 0) listOfMines.remove(it)
             }
+            listSort()
         }
 
-        val river = nextMove()
-        if (river != null && nextMoveEnable) move(river)
+        if (listOfMines.isNotEmpty()) return conquer()
 
-        println("ya vibralsya")
-        // Если река между двумя шахтами - берём
+        // If there is a free river near a mine, take it!
         val try0 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
-        }
-        if (try0 != null) return move(try0.key.source, try0.key.target)
-
-        // Если есть свободная река около шахты - берём
-        val try1 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)
         }
-        if (try1 != null) return move(try1.key.source, try1.key.target)
+        if (try0 != null) return protocol.claimMove(try0.key.source, try0.key.target)
 
-        // Здеся храняться данные о наших и чужих точках
-        val ourSites = state.our.sites
-        val enemySites = state.enemy.sites
+        // Look at all our pointsees
+        val ourSites = state
+                .rivers
+                .entries
+                .filter { it.value == RiverState.Our }
+                .flatMap { listOf(it.key.source, it.key.target) }
+                .toSet()
 
-        // Если есть свободная река между нашими точками - берём
-        val try2 = state.rivers.entries.find { (river, riverState) ->
+        // If there is a river between two our pointsees, take it!
+        val try1 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites && river.target in ourSites)
         }
-        if (try2 != null) return move(try2.key.source, try2.key.target)
+        if (try1 != null) return protocol.claimMove(try1.key.source, try1.key.target)
 
-        // Если есть свободная река около нашеё точки - берём (с учётом тупика!)
-        val try3 = state.rivers.entries.find { (river, riverState) ->
+        // If there is a river near our pointsee, take it!
+        val try2 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in ourSites || river.target in ourSites)
         }
-        if (try3 != null && !deadEnd(try3)) return move(try3.key.source, try3.key.target)
+        if (try2 != null) return protocol.claimMove(try2.key.source, try2.key.target)
 
-        // Если есть река между двух вражеских точек - берём
-        val try4 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && river.source in enemySites && river.target in enemySites
-        }
-        if (try4 != null) return move(try4.key.source, try4.key.target)
-
-        // Если есть точка около вражеской точки - берём
-        val try5 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in enemySites || river.target in enemySites)
-        }
-        if (try5 != null) return move(try5.key.source, try5.key.target)
-
-        // Берём любую реку (с учётом тупика!)
-        val try6 = state.rivers.entries.find { (_, riverState) ->
+        // Bah, take anything left
+        val try3 = state.rivers.entries.find { (_, riverState) ->
             riverState == RiverState.Neutral
         }
-        if (try6 != null && !deadEnd(try6)) return move(try6.key.source, try6.key.target)
+        if (try3 != null) return protocol.claimMove(try3.key.source, try3.key.target)
 
         // (╯°□°)╯ ┻━┻
         protocol.passMove()
     }
 
-    private fun nextMove(): River? {
-        var source = -1
-        var min = 10000
-        if (setOfMines.size == state.mines.size) nextMoveEnable = false
-        for (mine in MinesAndRivers.mapOfMines) {
-            if (mine.value.size < min && mine.key !in setOfMines) {
-                source = mine.key
-                min = mine.value.size
+    private fun listSort() {
+        if (listOfMines.isNotEmpty()) {
+            for (i in 1 until listOfMines.size) {
+                val current = listOfMines[i]
+                var j = i - 1
+                while (j >= 0) {
+                    if (listOfMines[j].riversCount() > current.riversCount())
+                        listOfMines[j + 1] = listOfMines[j]
+                    else
+                        break
+                    j--
+                }
+                listOfMines[j + 1] = current
             }
         }
-        if (source != -1) {
-            val river = MinesAndRivers.mapOfMines.getValue(source).first()
-            setOfMines.add(source)
-            nextMoveEnable = true
-            return river
-        }
-        return null
     }
 
-    // функция, которая проверяет реку на тупиковость, то есть нет иного нейтрального выхода
-    private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
-        val end = river.key.target
-        val filtered = state.rivers.filter { it.key.source == end || it.key.target == end }
-        val ourTry = filtered.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source != end || river.target != end)
-        }
-        return ourTry == null
-    }
-
-    // функция ради функции
-    private fun move(source: Int, target: Int) {
-        protocol.claimMove(source, target)
-    }
-
-    private fun move(river: River) {
-        protocol.claimMove(river.source, river.target)
+    private fun conquer() {
+        if (listOfMines.size == 1) firstTime = false
+        val temp = listOfMines[0].riverNearMines.first()
+        listOfMines.removeAt(0)
+        protocol.claimMove(temp.source, temp.target)
     }
 }
