@@ -6,14 +6,14 @@ import java.util.*
 
 class MinesAndRivers {
     companion object {
-        val mapOfMines: TreeMap<Int, MutableMap<River, RiverState>> = TreeMap()
+        val mapOfMines: TreeMap<Int, MutableSet<River>> = TreeMap()
     }
 }
 
 class Intellect(val state: State, val protocol: Protocol) {
 
     private val setOfMines = mutableSetOf<Int>()
-    // private var haveNext = true
+    private var nextMoveEnable = false
 
     fun makeMove() {
 
@@ -23,26 +23,20 @@ class Intellect(val state: State, val protocol: Protocol) {
                 val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
                     (river.source == m || river.target == m) && riverState == RiverState.Neutral
                 }
-                val k = HashMap<River, RiverState>()
-                k.putAll(tryToFindNearRivers)
+                val k = mutableSetOf<River>()
+                k.addAll(tryToFindNearRivers.keys)
                 MinesAndRivers.mapOfMines[m] = k
             }
         } else {
             MinesAndRivers.mapOfMines.values.map { riverMap ->
-                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
+                riverMap.removeIf { state.rivers[it] != RiverState.Neutral }
             }
         }
 
-//        val next = nextTurn()
-//        if (next != -1) {
-//            val temp = state.rivers.entries.find { (river, type) ->
-//                type == RiverState.Neutral && (river.source == next || river.target == next)
-//            }!!
-//            setOfMines.add(next)
-//            move(temp.key.source, temp.key.target)
-//
-//        }
+        val river = nextMove()
+        if (river != null && nextMoveEnable) move(river)
 
+        println("ya vibralsya")
         // Если река между двумя шахтами - берём
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
@@ -93,45 +87,31 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.passMove()
     }
 
-    private fun nextTurn(): Int {
-        var target = -1
-        var i = 1
-        while (target == -1) {
-            for (mine in MinesAndRivers.mapOfMines.keys)
-                if (MinesAndRivers.mapOfMines.getValue(mine).size == i)
-                    target = mine
-            if (i > 30) break
-            i++
-        }
-        return target
-    }
-
-    // вроде как она должна считать сколько рек около шахт, но не задалось
-    private fun minePriority(state: State): List<Int> {
-        val data = mutableMapOf<Int, Int>()
-        val result = mutableListOf<Int>()
-        for (mine in state.mines) {
-            val rivers = state.rivers.entries.filter {
-                (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral
+    private fun nextMove(): River? {
+        var source = -1
+        var min = 10000
+        if (setOfMines.size == state.mines.size) nextMoveEnable = false
+        for (mine in MinesAndRivers.mapOfMines) {
+            if (mine.value.size < min && mine.key !in setOfMines) {
+                source = mine.key
+                min = mine.value.size
             }
-            data[mine] = rivers.size
         }
-        var i = 1
-        while (result.size != data.size) {
-            for (obj in data)
-                if (obj.value == i) result.add(obj.key)
-            i++
+        if (source != -1) {
+            val river = MinesAndRivers.mapOfMines.getValue(source).first()
+            setOfMines.add(source)
+            nextMoveEnable = true
+            return river
         }
-        return result
+        return null
     }
 
     // функция, которая проверяет реку на тупиковость, то есть нет иного нейтрального выхода
     private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
         val end = river.key.target
-        val begin = river.key.target
         val filtered = state.rivers.filter { it.key.source == end || it.key.target == end }
         val ourTry = filtered.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source != begin || river.target != begin)
+            riverState == RiverState.Neutral && (river.source != end || river.target != end)
         }
         return ourTry == null
     }
@@ -141,4 +121,7 @@ class Intellect(val state: State, val protocol: Protocol) {
         protocol.claimMove(source, target)
     }
 
+    private fun move(river: River) {
+        protocol.claimMove(river.source, river.target)
+    }
 }
