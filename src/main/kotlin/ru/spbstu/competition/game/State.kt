@@ -14,14 +14,17 @@ class State {
     val our = OurSites(setOf())
     val enemy = EnemySites(setOf())
 
+
     fun init(setup: Setup) {
         myId = setup.punter
         for (river in setup.map.rivers) {
             rivers[river] = RiverState.Neutral
         }
+
         for (mine in setup.map.mines) {
             mines += mine
         }
+
         dotsCount = rivers
                 .entries
                 .filter { it.value == RiverState.Neutral }
