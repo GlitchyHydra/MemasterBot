@@ -94,8 +94,8 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
      */
     private fun conquer() {
         if (listOfMines.size == 1) firstTime = false
-        if (listOfMines[0].riversCount() == 0 && listOfMines.size > 1) listOfMines.removeAt(0)
-        val temp = listOfMines[0].riverNearMines.first()
+        if (listOfMines.first().riversCount() == 0 && listOfMines.size > 1) listOfMines.remove(listOfMines.first())
+        val temp = listOfMines.first().riverNearMines.first()
         listOfMines.removeAt(0)
         listOfMadeMoves.add(temp)
         protocol.claimMove(temp.source, temp.target)
@@ -189,9 +189,7 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
                 listSort()
             }
         } else {
-            for (it in listOfMines) {
-                it.removeEnemyRivers(state.rivers)
-            }
+            for (mine in listOfMines) mine.removeEnemyRivers(state.rivers)
             listOfMines.removeIf { it.riversCount() == 0 }
             listSort()
         }
