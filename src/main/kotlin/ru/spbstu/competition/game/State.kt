@@ -14,19 +14,28 @@ class State {
     val our = OurSites(setOf())
     val enemy = EnemySites(setOf())
 
+
     fun init(setup: Setup) {
         myId = setup.punter
         for (river in setup.map.rivers) {
             rivers[river] = RiverState.Neutral
         }
+
         for (mine in setup.map.mines) {
             mines += mine
         }
+
         dotsCount = rivers
                 .entries
                 .filter { it.value == RiverState.Neutral }
                 .flatMap { listOf(it.key.source) }.size
     }
+
+    fun findRiver(source: Int, target: Int): River = rivers.keys.find {
+            it.source == source && it.target == target ||
+                    it.source == target && it.target == source
+        }!!
+
 
     fun update(claim: Claim) {
         rivers[River(claim.source, claim.target)] = when (claim.punter) {

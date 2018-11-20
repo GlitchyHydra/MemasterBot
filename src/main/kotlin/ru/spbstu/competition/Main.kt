@@ -2,6 +2,7 @@ package ru.spbstu.competition
 
 import org.kohsuke.args4j.CmdLineParser
 import org.kohsuke.args4j.Option
+import ru.spbstu.competition.game.Graph
 import ru.spbstu.competition.game.Intellect
 import ru.spbstu.competition.game.State
 import ru.spbstu.competition.protocol.Protocol
@@ -12,7 +13,7 @@ object Arguments {
     var url: String = "kotoed.icc.spbstu.ru"
 
     @Option(name = "-p", usage = "Specify server port")
-    var port: Int = 50003
+    var port: Int = 50005
 
     fun use(args: Array<String>): Arguments =
             CmdLineParser(this).parseArgument(*args).let{ this }
@@ -21,14 +22,12 @@ object Arguments {
 fun main(args: Array<String>) {
     Arguments.use(args)
 
-    println("Hello, ma bois!!!")
+    println("Hello")
 
     // Протокол обмена с сервером
     val protocol = Protocol(Arguments.url, Arguments.port)
     // Состояние игрового поля
     val gameState = State()
-    // Джо очень умный чувак, вот его ум
-    val intellect = Intellect(gameState, protocol)
 
     protocol.handShake("CordOfGlitches")
 
@@ -38,6 +37,11 @@ fun main(args: Array<String>) {
     println("Received id = ${setupData.punter}")
 
     protocol.ready()
+
+    println("make graph")
+    // Джо очень умный чувак, вот его ум
+    val intellect = Intellect(gameState, protocol, Graph(gameState))
+    println("graph was made")
 
     gameloop@ while(true) {
         val message = protocol.serverMessage()
@@ -49,7 +53,7 @@ fun main(args: Array<String>) {
                 break@gameloop
             }
             is Timeout -> {
-                println("Dat Boi too slow =(")
+                println("Connection Timeout")
             }
             is GameTurnMessage -> {
                 for(move in message.move.moves) {
@@ -60,9 +64,8 @@ fun main(args: Array<String>) {
                 }
             }
         }
-
-        println("Boi thinkin'")
+        println("Make glitches")
         intellect.makeMove()
-        println("Boi, I'm genius!")
+        println("Made")
     }
 }

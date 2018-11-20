@@ -2,139 +2,279 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
-import java.util.*
 
-class MinesAndRivers {
-    companion object {
-        val mapOfMines: TreeMap<Int, MutableMap<River, RiverState>> = TreeMap()
-    }
-}
+class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
-class Intellect(val state: State, val protocol: Protocol) {
+    /**
+     * setOfPath - множество путей из каждой в шахты к ближашей шахте
+     * listOfMines - множество в котором хранится информация о каждой шахте,
+     * которая включает в себя какие речки около шахты и ее название
+     */
 
-    private val setOfMines = mutableSetOf<Int>()
-    private var haveNext = true
+    private val listOfMines = mutableListOf<MinesInfo>()
+    private var firstTime = true
+    private var isMinesConnected = false
+    private val setOfPaths = mutableSetOf<Path>()
+    private var currentPath: Path? = null
+    private val listOfMadeMoves = mutableListOf<River>()
 
-    fun makeMove() {
+    /**
+     * @author Valerii Kvan
+     * Для каждой шахты ищем ближайшую и ищем кратчайший до нее путь
+     */
+    private fun createPathsBetweenMines() {
+        val existedPathBetween = mutableSetOf<Path.NearestMine>()
 
-        //find all mines and rivers near mines at beginning of game
-        //and fill this map
-        if (MinesAndRivers.mapOfMines.isEmpty()) {
-            state.mines.map { m ->
-                val tryToFindNearRivers = state.rivers.filter { (river, riverState) ->
-                    (river.source == m || river.target == m) && riverState == RiverState.Neutral
+        state.mines.forEach { mine ->
+            val nearestMine = Path.NearestMine(mine, graph.bfs(mine, state.mines))
+            if (nearestMine.nearest != -1) {
+                if (!existedPathBetween.contains(nearestMine)) {
+                    val p = graph.shortestPath(mine).unrollPath(nearestMine.nearest)
+                    val path = Path(nearestMine, p)
+                    setOfPaths.add(path)
+                    existedPathBetween.add(nearestMine)
                 }
-                val k = HashMap<River, RiverState>()
-                k.putAll(tryToFindNearRivers)
-                MinesAndRivers.mapOfMines[m] = k
-            }
-
-        }
-        //remove from mines from map if cant capture (not neutral)
-        else {
-            MinesAndRivers.mapOfMines.values.map { riverMap ->
-                riverMap.entries.removeIf { state.rivers[it.key] != RiverState.Neutral }
             }
         }
-
-
-        // Если река между двумя шахтами - берём
-        val try0 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in state.mines && river.target in state.mines)
-        }
-        if (try0 != null) return move(try0.key.source, try0.key.target)
-
-        // Если есть свободная река около шахты - берём
-        val try1 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)
-        }
-        if (try1 != null) return move(try1.key.source, try1.key.target)
-
-        // Здеся храняться данные о наших и чужих точках
-        val ourSites = state.our.sites
-        val enemySites = state.enemy.sites
-
-        // Если есть свободная река между нашими точками - берём
-        val try2 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in ourSites && river.target in ourSites)
-        }
-        if (try2 != null) return move(try2.key.source, try2.key.target)
-
-        // Если есть свободная река около нашеё точки - берём (с учётом тупика!)
-        val try3 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in ourSites || river.target in ourSites)
-        }
-        if (try3 != null && !deadEnd(try3)) return move(try3.key.source, try3.key.target)
-
-        // Если есть река между двух вражеских точек - берём
-        val try4 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && river.source in enemySites && river.target in enemySites
-        }
-        if (try4 != null) return move(try4.key.source, try4.key.target)
-
-        // Если есть точка около вражеской точки - берём
-        val try5 = state.rivers.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source in enemySites || river.target in enemySites)
-        }
-        if (try5 != null) return move(try5.key.source, try5.key.target)
-
-        // Берём любую реку (с учётом тупика!)
-        val try6 = state.rivers.entries.find { (_, riverState) ->
-            riverState == RiverState.Neutral
-        }
-        if (try6 != null && !deadEnd(try6)) return move(try6.key.source, try6.key.target)
-
-        // (╯°□°)╯ ┻━┻
-        protocol.passMove()
     }
 
-
-    // использует mapOfMines для выбора приоритета захвата шахт (+- работает)
-    private fun nextTurn(): Int {
-        var target = -1
-        var i = 1
-        while (target == -1) {
-            for (mine in MinesAndRivers.mapOfMines.keys)
-                if (MinesAndRivers.mapOfMines.getValue(mine).size == i)
-                    target = mine
-            if (i > 30) break
-            i++
-        }
-        return target
-    }
-
-    // вроде как она должна считать сколько рек около шахт, но делает это долго (другой вариант)
-    private fun minePriority(state: State): List<Int> {
-        val data = mutableMapOf<Int, Int>()
+    /**
+     * @author Valerii Kvan
+     * по map в котором хранятся стоимость ближайшего пути до всех точек
+     * находим путь до ближайшей шахты
+     */
+    private fun Map<Int, Graph.VertexInfo>.unrollPath(to: Int): List<Int> {
         val result = mutableListOf<Int>()
-        for (mine in state.mines) {
-            val rivers = state.rivers.entries.filter {
-                (it.key.source == mine || it.key.target == mine) && it.value == RiverState.Neutral
-            }
-            data[mine] = rivers.size
+        var current: Int? = to
+        while (current != null) {
+            result += current
+            current = this[current]?.prev
         }
-        var i = 1
-        while (result.size != data.size) {
-            for (obj in data)
-                if (obj.value == i) result.add(obj.key)
-            i++
-        }
+        result.reverse()
         return result
     }
 
-    // проверяет реку, не является ли она единственным нейтральным выходом из точки
-    private fun deadEnd(river: MutableMap.MutableEntry<River, RiverState>): Boolean {
-        val end = river.key.target
-        val begin = river.key.target
-        val filtered = state.rivers.filter { it.key.source == end || it.key.target == end }
-        val ourTry = filtered.entries.find { (river, riverState) ->
-            riverState == RiverState.Neutral && (river.source != begin || river.target != begin)
-        }
-        return ourTry == null
+    /**
+     * @author Valerii Kvan
+     * удалить из возможных путей
+     */
+    private fun removePath() {
+        setOfPaths.remove(currentPath!!)
+        if (setOfPaths.isNotEmpty())
+            currentPath = setOfPaths.findWithMinPath()
+        else isMinesConnected = true
     }
-    // функция ради функции
-    private fun move(source: Int, target: Int) {
-        protocol.claimMove(source, target)
+
+    /**
+     * @author Valerii Kvan
+     * проверка на конец пути
+     */
+    private fun endOfPath(target: Int): Boolean {
+        if (target == -1) {
+            setOfPaths.remove(currentPath!!)
+            removePath()
+            return true
+        }
+        return false
+    }
+
+    /**
+     * @author Valerii Kvan
+     * Перестройка путей(пока не работает как надо, неиспользуется)
+     */
+    private fun repath(s: Int) {
+        currentPath!!.setPathNew(
+                graph.shortestPath(s).unrollPath(currentPath!!.getFinal())
+        )
+        println("новый путь ${currentPath.toString()}")
+    }
+
+    /**
+     * @author Strokov Artem
+     */
+    private fun conquer() {
+        if (listOfMines.size == 1) firstTime = false
+        if (listOfMines[0].riversCount() == 0 && listOfMines.size > 1) listOfMines.removeAt(0)
+        val temp = listOfMines[0].riverNearMines.first()
+        listOfMines.removeAt(0)
+        listOfMadeMoves.add(temp)
+        protocol.claimMove(temp.source, temp.target)
+    }
+
+    /**
+     * @author Strokov Artem
+     */
+    private fun listSort() {
+        if (listOfMines.isNotEmpty()) {
+            for (i in 1 until listOfMines.size) {
+                val current = listOfMines[i]
+                var j = i - 1
+                while (j >= 0) {
+                    if (listOfMines[j].riversCount() > current.riversCount())
+                        listOfMines[j + 1] = listOfMines[j]
+                    else
+                        break
+                    j--
+                }
+                listOfMines[j + 1] = current
+            }
+        }
+    }
+
+    /**
+     * @author Valerii Kvan
+     * Удалить вражеские реки из графа
+     */
+    private fun Graph.removeEnemyRivers() {
+        state.rivers.filter { it.value == RiverState.Enemy }.keys
+                .forEach { removeRiver(it.source, it.target) }
+    }
+
+    /**
+     * @author Valerii Kvan
+     * Найти шахты с минимальным путем между ними
+     */
+    private fun Set<Path>.findWithMinPath(): Path {
+        var min = Int.MAX_VALUE
+        var path = this.first()
+        for (p in this) {
+            if (min > p.getPathCost()) {
+                path = p
+                min = p.getPathCost()
+            }
+        }
+        return path
+    }
+
+    fun makeMove() {
+        // Joe is like super smart!
+        // Da best strategy ever!
+
+        // If there is a free river near a mine, take it!
+
+        /**
+         * если множество возможных путей пусто и пути не пройдены
+         * то ищем эти пути, если есть шахты, которые можно соединить
+         * на второй ветке смотрим если текущий путь не назначен и
+         * пути еще не пройдены, то берем минимальный по стоимости путь
+         * из возможных путей
+         */
+        when {
+            setOfPaths.isEmpty() && !isMinesConnected -> {
+                createPathsBetweenMines()
+                if (setOfPaths.isEmpty()) isMinesConnected = true
+                println(setOfPaths)
+            }
+            currentPath == null && !isMinesConnected -> {
+                currentPath = setOfPaths.findWithMinPath()
+            }
+            /*else -> {
+                println("before: ${graph.getConnections()}")
+                graph.removeEnemyRivers()
+                println("after1: ${graph.getConnections()}")
+            }*/
+        }
+
+        /**
+         *
+         */
+        if (listOfMines.isEmpty()) {
+            if (firstTime) {
+                for (mine in state.mines) {
+                    val temp = state.rivers.filter { (river, type) ->
+                        (river.target == mine || river.source == mine) && type == RiverState.Neutral
+                    }.keys.toMutableSet()
+                    listOfMines.add(MinesInfo(mine, temp))
+                }
+                listSort()
+            }
+        } else {
+            for (it in listOfMines) {
+                it.removeEnemyRivers(state.rivers)
+            }
+            listOfMines.removeIf { it.riversCount() == 0 }
+            listSort()
+        }
+
+        //
+        if (listOfMines.isNotEmpty()) return conquer()
+
+
+        //Если есть возможные пути и текущий путь назначен то идем по нему
+        if (!setOfPaths.isEmpty() && currentPath != null) {
+
+            while (setOfPaths.isNotEmpty()) {
+
+                if (isMinesConnected) break
+
+                val (s, t) = currentPath!!.getNextRiver()
+
+                if (endOfPath(t)) {
+                    println("end of path")
+                    continue
+                }
+
+                var river = state.findRiver(s, t)
+                var isCapturing = true
+
+                while (state.rivers[river] != RiverState.Neutral) {
+                    val (source, target) = currentPath!!.getNextRiver()
+                    if (target == -1) {
+                        isCapturing = false
+                        removePath()
+                        break
+                    }
+                    /*println("В цикле source: $source, target: $target")
+                    if (state.rivers[river] == RiverState.Enemy) {
+                        graph.removeEnemyRivers()
+                        repath(source)
+                        continue
+                    }*/
+                    river = state.findRiver(source, target)
+                }
+
+                if (!isCapturing) continue
+
+                println("capturing: $river")
+                protocol.claimMove(river.source, river.target)
+                return
+
+            }
+        }
+
+        val try0 = state.rivers.entries.find { (river, riverState) ->
+            riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)
+        }
+        if (try0 != null) return protocol.claimMove(try0.key.source, try0.key.target)
+
+        // Look at all our pointsees
+        val ourSites = state
+                .rivers
+                .entries
+                .filter { it.value == RiverState.Our }
+                .flatMap { listOf(it.key.source, it.key.target) }
+                .toSet()
+
+        // If there is a river between two our pointsees, take it!
+        val try1 = state.rivers.entries.find { (river, riverState) ->
+            riverState == RiverState.Neutral && (river.source in ourSites && river.target in ourSites)
+        }
+        if (try1 != null) return protocol.claimMove(try1.key.source, try1.key.target)
+
+        // If there is a river near our pointsee, take it!
+        val try2 = state.rivers.entries.find { (river, riverState) ->
+            riverState == RiverState.Neutral && (river.source in ourSites || river.target in ourSites)
+        }
+        if (try2 != null) return protocol.claimMove(try2.key.source, try2.key.target)
+
+        // Bah, take anything left
+        val try3 = state.rivers.entries.find { (_, riverState) ->
+            riverState == RiverState.Neutral
+        }
+        if (try3 != null) return protocol.claimMove(try3.key.source, try3.key.target)
+
+        // (╯°□°)╯ ┻━┻
+        protocol.passMove()
     }
 
 }
