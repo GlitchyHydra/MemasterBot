@@ -91,6 +91,7 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
     /**
      * @author Strokov Artem
+     * Делает ход выбирая шахту с меньшим количеством нейтральных рек около неё, почле чего удаляет из listOfMines
      */
     private fun conquer() {
         if (listOfMines.size == 1) firstTime = false
@@ -103,6 +104,7 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
     /**
      * @author Strokov Artem
+     * сортирует listOfMines по количеству нейтральных речек около каждой
      */
     private fun listSort() {
         if (listOfMines.isNotEmpty()) {
@@ -147,10 +149,6 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
     }
 
     fun makeMove() {
-        // Joe is like super smart!
-        // Da best strategy ever!
-
-        // If there is a free river near a mine, take it!
 
         /**
          * если множество возможных путей пусто и пути не пройдены
@@ -176,7 +174,8 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         }
 
         /**
-         *
+         * для начала инициализирует listOfMines, после чего, на последующих
+         * ходах уменьшает количество рек внутри каждого MinesInfo и сортирует лист
          */
         if (listOfMines.isEmpty()) {
             if (firstTime) {
@@ -240,6 +239,7 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
             }
         }
 
+        //there is origin bot logic
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)
         }
