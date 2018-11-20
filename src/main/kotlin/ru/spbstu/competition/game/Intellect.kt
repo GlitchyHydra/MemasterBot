@@ -1,11 +1,13 @@
 package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
+import ru.spbstu.competition.protocol.data.River
 
 class Intellect(val state: State, val protocol: Protocol) {
 
-    private var listOfMines = mutableListOf<MinesInfo>()
+    private val listOfMines = mutableListOf<MinesInfo>()
     private var firstTime = true
+    private val listOfMadeMoves = mutableListOf<River>()
 
     fun makeMove() {
 
@@ -84,8 +86,10 @@ class Intellect(val state: State, val protocol: Protocol) {
 
     private fun conquer() {
         if (listOfMines.size == 1) firstTime = false
+        if (listOfMines[0].riversCount() == 0 && listOfMines.size > 1) listOfMines.removeAt(0)
         val temp = listOfMines[0].riverNearMines.first()
         listOfMines.removeAt(0)
+        listOfMadeMoves.add(temp)
         protocol.claimMove(temp.source, temp.target)
     }
 }
