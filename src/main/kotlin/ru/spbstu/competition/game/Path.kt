@@ -4,12 +4,11 @@ import ru.spbstu.competition.protocol.data.River
 import java.util.ArrayDeque
 
 /**
+ * @author Valerii Kvan
  * Класс Path нужен для перестроения пути, если какие-то реки на возможном
  * пути захватили враги, а также для того чтоб узнать, где мы находимся
- * Для каждой шахты создается отдельный объект
  * currentPosition - последняя захваченная точка(в начале это шахта)
  * nearestMine - ближайшая шахта, -1, если нет шахты куда можно прийти
- * rivers - ссылка на все реки
  * path - возможный путь по вершинам
  * next - следующая вершина в пути
  */
@@ -61,11 +60,6 @@ class Path (private val nearestMine: NearestMine, path: List<Int>) {
         next = path.poll() ?: -1
         return Pair(currentPosition, next)
     }
-
-    /**
-     * Получить текущую речку, которую нужно захватить
-     */
-    fun getCurrentRiver() = Pair(currentPosition, next)
 
     /**
      * Перестроить путь

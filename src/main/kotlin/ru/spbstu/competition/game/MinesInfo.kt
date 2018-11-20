@@ -2,22 +2,17 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.data.River
 
+/**
+ * @author Artem Strokov
+ * поле mine - id шахты
+ * поле riverNearMines - ссылка на изменяемое множество ближайших рек к шахте
+ * riversCount() - количество ближайших к шахте рек
+ * removeEnemyRivers - удалить вражеские ближайшие к шахте речки
+ */
 class MinesInfo(private val mine: Int,
                 val riverNearMines: MutableSet<River>) {
 
-    private var nearMine = -1
-
     fun riversCount() = riverNearMines.size
-
-    /*fun removeEnemyRivers(riversMap: Map<River, RiverState>) {
-        riverNearMines.removeAll(riversMap.filter { (_, value) -> value == RiverState.Enemy }.keys)
-    }*/
-
-    fun setNearMine(nearMine: Int) {
-        this.nearMine = nearMine
-    }
-
-    fun getRivers() = riverNearMines
 
     fun removeEnemyRivers(riversMap: Map<River, RiverState>) {
         val temp = riversMap.filter { (key, value) ->
@@ -25,6 +20,7 @@ class MinesInfo(private val mine: Int,
         riverNearMines.removeAll(temp)
     }
 
+    //Это чисто для себя
     override fun toString(): String {
         return Pair(mine, riverNearMines.size).toString()
     }

@@ -2,6 +2,11 @@ package ru.spbstu.competition.game
 
 import java.util.*
 
+/**
+ * @author Valerii Kvan
+ * граф, в нем мы храним в карте как ключ id вершин и значение это
+ * множество id соседених  вершин
+ */
 class Graph(gameState: State) {
 
     private val connections = mutableMapOf<Int, Set<Int>>()
@@ -9,8 +14,6 @@ class Graph(gameState: State) {
     init {
         gameState.rivers.keys.forEach { addRiver(it.source, it.target) }
     }
-
-    fun getConnections() = connections
 
     fun removeRiver(source: Int, target: Int) {
         connections[source] = connections[source]?.let { it - target } ?: setOf()
@@ -25,8 +28,6 @@ class Graph(gameState: State) {
     private fun getNeighbors(v: Int): Set<Int> {
         return connections[v] ?: return emptySet()
     }
-
-    //operator fun get(name: Int) = vertices[name] ?: throw IllegalArgumentException()
 
     fun bfs(start: Int, mines: List<Int>): Int {
         val queue = ArrayDeque<Int>()

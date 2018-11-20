@@ -2,7 +2,6 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
 import ru.spbstu.competition.protocol.data.River
-import java.util.*
 
 class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
@@ -12,7 +11,7 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
      * которая включает в себя какие речки около шахты и ее название
      */
 
-    private var listOfMines = mutableListOf<MinesInfo>()
+    private val listOfMines = mutableListOf<MinesInfo>()
     private var firstTime = true
     private var isMinesConnected = false
     private val setOfPaths = mutableSetOf<Path>()
@@ -20,7 +19,8 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
     private val listOfMadeMoves = mutableListOf<River>()
 
     /**
-     * Для каждой шахты ищем ближайшую и ищем кратчайшие до нее путь
+     * @author Valerii Kvan
+     * Для каждой шахты ищем ближайшую и ищем кратчайший до нее путь
      */
     private fun createPathsBetweenMines() {
         val existedPathBetween = mutableSetOf<Path.NearestMine>()
@@ -39,8 +39,9 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
     }
 
     /**
+     * @author Valerii Kvan
      * по map в котором хранятся стоимость ближайшего пути до всех точек
-     *
+     * находим путь до ближайшей шахты
      */
     private fun Map<Int, Graph.VertexInfo>.unrollPath(to: Int): List<Int> {
         val result = mutableListOf<Int>()
@@ -53,10 +54,10 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         return result
     }
 
-    private fun captureOnPath() {
-
-    }
-
+    /**
+     * @author Valerii Kvan
+     * удалить из возможных путей
+     */
     private fun removePath() {
         setOfPaths.remove(currentPath!!)
         if (setOfPaths.isNotEmpty())
@@ -64,20 +65,23 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         else isMinesConnected = true
     }
 
+    /**
+     * @author Valerii Kvan
+     * проверка на конец пути
+     */
     private fun endOfPath(target: Int): Boolean {
         if (target == -1) {
             setOfPaths.remove(currentPath!!)
-            if (setOfPaths.isNotEmpty())
-                currentPath = setOfPaths.findWithMinPath()
-            else {
-                isMinesConnected = true
-                currentPath = null
-            }
+            removePath()
             return true
         }
         return false
     }
 
+    /**
+     * @author Valerii Kvan
+     * Перестройка путей(пока не работает как надо, неиспользуется)
+     */
     private fun repath(s: Int) {
         currentPath!!.setPathNew(
                 graph.shortestPath(s).unrollPath(currentPath!!.getFinal())
@@ -85,6 +89,9 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         println("новый путь ${currentPath.toString()}")
     }
 
+    /**
+     * @author Strokov Artem
+     */
     private fun conquer() {
         if (listOfMines.size == 1) firstTime = false
         if (listOfMines[0].riversCount() == 0 && listOfMines.size > 1) listOfMines.removeAt(0)
@@ -94,6 +101,9 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         protocol.claimMove(temp.source, temp.target)
     }
 
+    /**
+     * @author Strokov Artem
+     */
     private fun listSort() {
         if (listOfMines.isNotEmpty()) {
             for (i in 1 until listOfMines.size) {
@@ -111,12 +121,19 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         }
     }
 
-
+    /**
+     * @author Valerii Kvan
+     * Удалить вражеские реки из графа
+     */
     private fun Graph.removeEnemyRivers() {
         state.rivers.filter { it.value == RiverState.Enemy }.keys
                 .forEach { removeRiver(it.source, it.target) }
     }
 
+    /**
+     * @author Valerii Kvan
+     * Найти шахты с минимальным путем между ними
+     */
     private fun Set<Path>.findWithMinPath(): Path {
         var min = Int.MAX_VALUE
         var path = this.first()
@@ -135,15 +152,14 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
         // If there is a free river near a mine, take it!
 
+        /**
+         * если множество возможных путей пусто и пути не пройдены
+         * то ищем эти пути, если есть шахты, которые можно соединить
+         * на второй ветке смотрим если текущий путь не назначен и
+         * пути еще не пройдены, то берем минимальный по стоимости путь
+         * из возможных путей
+         */
         when {
-            /*mapOfMinesInfo.isEmpty() -> {
-                for (mine in state.mines) {
-                    val mi = MinesInfo(mine, state.rivers.keys)
-                    mi.setNearMine(graph.bfs(mine, state.mines))
-                    mapOfMinesInfo.add(mi)
-                }
-                println(mapOfMinesInfo)
-            }*/
             setOfPaths.isEmpty() && !isMinesConnected -> {
                 createPathsBetweenMines()
                 if (setOfPaths.isEmpty()) isMinesConnected = true
@@ -152,13 +168,16 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
             currentPath == null && !isMinesConnected -> {
                 currentPath = setOfPaths.findWithMinPath()
             }
-            else -> {
+            /*else -> {
                 println("before: ${graph.getConnections()}")
                 graph.removeEnemyRivers()
                 println("after1: ${graph.getConnections()}")
-            }
+            }*/
         }
 
+        /**
+         *
+         */
         if (listOfMines.isEmpty()) {
             if (firstTime) {
                 for (mine in state.mines) {
@@ -172,19 +191,24 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         } else {
             for (it in listOfMines) {
                 it.removeEnemyRivers(state.rivers)
-                if (it.riversCount() == 0) listOfMines.remove(it)
             }
+            listOfMines.removeIf { it.riversCount() == 0 }
             listSort()
         }
 
+        //
         if (listOfMines.isNotEmpty()) return conquer()
 
+
+        //Если есть возможные пути и текущий путь назначен то идем по нему
         if (!setOfPaths.isEmpty() && currentPath != null) {
 
-            val (s, t) = currentPath!!.getNextRiver()
-
             while (setOfPaths.isNotEmpty()) {
+
                 if (isMinesConnected) break
+
+                val (s, t) = currentPath!!.getNextRiver()
+
                 if (endOfPath(t)) {
                     println("end of path")
                     continue
@@ -200,8 +224,12 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
                         removePath()
                         break
                     }
-                    println("В цикле source: $source, target: $target")
-                    if (state.rivers[river] == RiverState.Enemy) repath(source)
+                    /*println("В цикле source: $source, target: $target")
+                    if (state.rivers[river] == RiverState.Enemy) {
+                        graph.removeEnemyRivers()
+                        repath(source)
+                        continue
+                    }*/
                     river = state.findRiver(source, target)
                 }
 
