@@ -2,7 +2,7 @@ package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.data.River
 
-class MinesInfo(val mine: Int, val riverNearMines: MutableSet<River>) {
+class MinesInfo(val mine: Int,  val riverNearMines: MutableSet<River>) {
     fun riversCount() = riverNearMines.size
 
     fun removeEnemyRivers(riversMap: Map<River, RiverState>) {
