@@ -9,9 +9,9 @@ class MinesInfo(private val mine: Int,
 
     fun riversCount() = riverNearMines.size
 
-    fun removeEnemyRivers(riversMap: Map<River, RiverState>) {
+    /*fun removeEnemyRivers(riversMap: Map<River, RiverState>) {
         riverNearMines.removeAll(riversMap.filter { (_, value) -> value == RiverState.Enemy }.keys)
-    }
+    }*/
 
     fun setNearMine(nearMine: Int) {
         this.nearMine = nearMine
@@ -19,7 +19,13 @@ class MinesInfo(private val mine: Int,
 
     fun getRivers() = riverNearMines
 
+    fun removeEnemyRivers(riversMap: Map<River, RiverState>) {
+        val temp = riversMap.filter { (key, value) ->
+            (key.target == mine || key.source == mine) && value == RiverState.Enemy }.keys
+        riverNearMines.removeAll(temp)
+    }
+
     override fun toString(): String {
-        return nearMine.toString()
+        return Pair(mine, riverNearMines.size).toString()
     }
 }

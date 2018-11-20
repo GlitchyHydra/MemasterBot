@@ -13,7 +13,7 @@ object Arguments {
     var url: String = "kotoed.icc.spbstu.ru"
 
     @Option(name = "-p", usage = "Specify server port")
-    var port: Int = 50006
+    var port: Int = 50007
 
     fun use(args: Array<String>): Arguments =
             CmdLineParser(this).parseArgument(*args).let{ this }
@@ -41,8 +41,7 @@ fun main(args: Array<String>) {
     println("make graph")
     // Джо очень умный чувак, вот его ум
     val intellect = Intellect(gameState, protocol, Graph(gameState))
-    println(intellect.graph.getV())
-    println("graph maded")
+    println("graph was made")
 
     gameloop@ while(true) {
         val message = protocol.serverMessage()

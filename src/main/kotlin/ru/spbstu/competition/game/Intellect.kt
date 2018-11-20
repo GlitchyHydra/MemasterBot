@@ -1,6 +1,8 @@
 package ru.spbstu.competition.game
 
 import ru.spbstu.competition.protocol.Protocol
+import ru.spbstu.competition.protocol.data.River
+import java.util.*
 
 class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
@@ -12,19 +14,26 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
 
     private var listOfMines = mutableListOf<MinesInfo>()
     private var firstTime = true
+    private var isMinesConnected = false
     private val setOfPaths = mutableSetOf<Path>()
     private var currentPath: Path? = null
+    private val listOfMadeMoves = mutableListOf<River>()
 
     /**
      * Для каждой шахты ищем ближайшую и ищем кратчайшие до нее путь
      */
     private fun createPathsBetweenMines() {
+        val existedPathBetween = mutableSetOf<Path.NearestMine>()
+
         state.mines.forEach { mine ->
             val nearestMine = Path.NearestMine(mine, graph.bfs(mine, state.mines))
-            if (nearestMine.nearest != - 1) {
-                val p = graph.shortestPath(mine).unrollPath(nearestMine.nearest)
-                val path = Path(mine, nearestMine, p, state.rivers)
-                setOfPaths.add(path)
+            if (nearestMine.nearest != -1) {
+                if (!existedPathBetween.contains(nearestMine)) {
+                    val p = graph.shortestPath(mine).unrollPath(nearestMine.nearest)
+                    val path = Path(nearestMine, p)
+                    setOfPaths.add(path)
+                    existedPathBetween.add(nearestMine)
+                }
             }
         }
     }
@@ -44,10 +53,44 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         return result
     }
 
+    private fun captureOnPath() {
+
+    }
+
+    private fun removePath() {
+        setOfPaths.remove(currentPath!!)
+        if (setOfPaths.isNotEmpty())
+            currentPath = setOfPaths.findWithMinPath()
+        else isMinesConnected = true
+    }
+
+    private fun endOfPath(target: Int): Boolean {
+        if (target == -1) {
+            setOfPaths.remove(currentPath!!)
+            if (setOfPaths.isNotEmpty())
+                currentPath = setOfPaths.findWithMinPath()
+            else {
+                isMinesConnected = true
+                currentPath = null
+            }
+            return true
+        }
+        return false
+    }
+
+    private fun repath(s: Int) {
+        currentPath!!.setPathNew(
+                graph.shortestPath(s).unrollPath(currentPath!!.getFinal())
+        )
+        println("новый путь ${currentPath.toString()}")
+    }
+
     private fun conquer() {
         if (listOfMines.size == 1) firstTime = false
+        if (listOfMines[0].riversCount() == 0 && listOfMines.size > 1) listOfMines.removeAt(0)
         val temp = listOfMines[0].riverNearMines.first()
         listOfMines.removeAt(0)
+        listOfMadeMoves.add(temp)
         protocol.claimMove(temp.source, temp.target)
     }
 
@@ -66,6 +109,12 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
                 listOfMines[j + 1] = current
             }
         }
+    }
+
+
+    private fun Graph.removeEnemyRivers() {
+        state.rivers.filter { it.value == RiverState.Enemy }.keys
+                .forEach { removeRiver(it.source, it.target) }
     }
 
     private fun Set<Path>.findWithMinPath(): Path {
@@ -95,12 +144,18 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
                 }
                 println(mapOfMinesInfo)
             }*/
-            setOfPaths.isEmpty() -> {
+            setOfPaths.isEmpty() && !isMinesConnected -> {
                 createPathsBetweenMines()
+                if (setOfPaths.isEmpty()) isMinesConnected = true
                 println(setOfPaths)
             }
-            currentPath == null -> {
+            currentPath == null && !isMinesConnected -> {
                 currentPath = setOfPaths.findWithMinPath()
+            }
+            else -> {
+                println("before: ${graph.getConnections()}")
+                graph.removeEnemyRivers()
+                println("after1: ${graph.getConnections()}")
             }
         }
 
@@ -114,16 +169,6 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
                 }
                 listSort()
             }
-            if (!setOfPaths.isEmpty() && currentPath != null) {
-                val cp = currentPath!!
-                if (cp.getCurrentRiver() == null) {
-                    currentPath = null
-
-                } else {
-                    val r = cp.getCurrentRiver()!!
-                    protocol.claimMove(r.source, r.target)
-                }
-            }
         } else {
             for (it in listOfMines) {
                 it.removeEnemyRivers(state.rivers)
@@ -133,6 +178,41 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
         }
 
         if (listOfMines.isNotEmpty()) return conquer()
+
+        if (!setOfPaths.isEmpty() && currentPath != null) {
+
+            val (s, t) = currentPath!!.getNextRiver()
+
+            while (setOfPaths.isNotEmpty()) {
+                if (isMinesConnected) break
+                if (endOfPath(t)) {
+                    println("end of path")
+                    continue
+                }
+
+                var river = state.findRiver(s, t)
+                var isCapturing = true
+
+                while (state.rivers[river] != RiverState.Neutral) {
+                    val (source, target) = currentPath!!.getNextRiver()
+                    if (target == -1) {
+                        isCapturing = false
+                        removePath()
+                        break
+                    }
+                    println("В цикле source: $source, target: $target")
+                    if (state.rivers[river] == RiverState.Enemy) repath(source)
+                    river = state.findRiver(source, target)
+                }
+
+                if (!isCapturing) continue
+
+                println("capturing: $river")
+                protocol.claimMove(river.source, river.target)
+                return
+
+            }
+        }
 
         val try0 = state.rivers.entries.find { (river, riverState) ->
             riverState == RiverState.Neutral && (river.source in state.mines || river.target in state.mines)

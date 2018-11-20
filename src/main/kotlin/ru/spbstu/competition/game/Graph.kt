@@ -7,19 +7,20 @@ class Graph(gameState: State) {
     private val connections = mutableMapOf<Int, Set<Int>>()
 
     init {
-        gameState.rivers.keys.forEach {
-            //addVertex(it.source)
-            //addVertex(it.target)
-            addConnection(it.source, it.target)
-        }
+        gameState.rivers.keys.forEach { addRiver(it.source, it.target) }
     }
 
-    fun addConnection(begin: Int, end: Int) {
-        connections[begin] = connections[begin]?.let { it + end } ?: setOf(end)
-        connections[end] = connections[end]?.let { it + begin } ?: setOf(begin)
+    fun getConnections() = connections
+
+    fun removeRiver(source: Int, target: Int) {
+        connections[source] = connections[source]?.let { it - target } ?: setOf()
+        connections[target] = connections[target]?.let { it - source } ?: setOf()
     }
 
-   fun getV() = connections
+    private fun addRiver(source: Int, target: Int) {
+        connections[source] = connections[source]?.let { it + target } ?: setOf(target)
+        connections[target] = connections[target]?.let { it + source } ?: setOf(source)
+    }
 
     private fun getNeighbors(v: Int): Set<Int> {
         return connections[v] ?: return emptySet()

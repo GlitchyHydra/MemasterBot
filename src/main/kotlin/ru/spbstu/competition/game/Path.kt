@@ -13,37 +13,59 @@ import java.util.ArrayDeque
  * path - возможный путь по вершинам
  * next - следующая вершина в пути
  */
-class Path (private var currentPosition:Int,
-            private val nearestMine: NearestMine, path: List<Int>,
-            private val rivers: Map<River, RiverState>) {
+class Path (private val nearestMine: NearestMine, path: List<Int>) {
             private var path = ArrayDeque<Int>()
-            private var next = this.path.poll()
+            private var currentPosition: Int = -1
+            private var next: Int = -1
 
-    data class NearestMine(val name: Int, val nearest: Int)
+    data class NearestMine(val name: Int, val nearest: Int) {
+        override fun hashCode(): Int {
+            return super.hashCode()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other?.javaClass != javaClass) return false
+            other as NearestMine
+            if (other.nearest == this.name && other.name == this.nearest
+            || other.nearest == this.nearest && other.name == this.name)
+                return true
+            return super.equals(other)
+        }
+
+    }
 
     init {
         setPathNew(path)
+        //currentPosition = this.path.poll() ?: -1
+        //next = this.path.poll() ?: -1
     }
+
+    fun checkPath() = path.isEmpty()
+
+    fun getStart(): Int = currentPosition
+
+    fun getFinal(): Int = nearestMine.nearest
 
     fun getPathCost() = path.size
 
     fun getNearest() = nearestMine.nearest
-    /**
-     * Получить следующую речку
-     */
-    fun getNextRiver(): River {
-        val river = rivers.keys.find { it.source == currentPosition
-        && it.target == next || it.source == next && it.target == currentPosition}
-        currentPosition = path.poll()
-        next = path.poll()
-        return river ?: throw IllegalArgumentException("Null pointer in getNextRiver")
+
+    fun getNextRiver(): Pair<Int, Int> {
+        if (currentPosition == -1 && next == -1 && path.isNotEmpty()) {
+            currentPosition = path.poll()
+            next = path.poll() ?: -1
+            return Pair(currentPosition, next)
+        }
+        currentPosition = next
+        next = path.poll() ?: -1
+        return Pair(currentPosition, next)
     }
 
     /**
      * Получить текущую речку, которую нужно захватить
      */
-    fun getCurrentRiver() = rivers.keys.find { it.source == currentPosition
-            && it.target == next || it.source == next && it.target == currentPosition}
+    fun getCurrentRiver() = Pair(currentPosition, next)
 
     /**
      * Перестроить путь
@@ -60,9 +82,6 @@ class Path (private var currentPosition:Int,
     private fun checkPossibilities(): Boolean = nearestMine.nearest != -1
 
     override fun toString(): String {
-        return """
-            Mine ${nearestMine.nearest} NearestMine ${nearestMine.nearest}
-            path: $path
-        """.trimIndent()
+        return "\nMine ${nearestMine.name} NearestMine ${nearestMine.nearest} path: $path"
     }
 }

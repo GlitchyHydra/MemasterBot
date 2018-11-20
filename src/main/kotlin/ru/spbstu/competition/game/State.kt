@@ -31,6 +31,12 @@ class State {
                 .flatMap { listOf(it.key.source) }.size
     }
 
+    fun findRiver(source: Int, target: Int): River = rivers.keys.find {
+            it.source == source && it.target == target ||
+                    it.source == target && it.target == source
+        }!!
+
+
     fun update(claim: Claim) {
         rivers[River(claim.source, claim.target)] = when (claim.punter) {
             myId -> {
