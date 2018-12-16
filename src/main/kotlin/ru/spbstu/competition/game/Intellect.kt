@@ -83,6 +83,7 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
      * Перестройка путей(пока не работает как надо, неиспользуется)
      */
     private fun repath(s: Int) {
+        println("start: $s; final: ${currentPath!!.getFinal()} ")
         currentPath!!.setPathNew(
                 graph.shortestPath(s).unrollPath(currentPath!!.getFinal())
         )
@@ -222,12 +223,14 @@ class Intellect(val state: State, val protocol: Protocol, val graph: Graph) {
                         removePath()
                         break
                     }
-                    /*println("В цикле source: $source, target: $target")
+                    println("В цикле source: $source, target: $target")
                     if (state.rivers[river] == RiverState.Enemy) {
                         graph.removeEnemyRivers()
                         repath(source)
-                        continue
-                    }*/
+                        isCapturing = false
+                        currentPath!!.beginRouting()
+                        break
+                    }
                     river = state.findRiver(source, target)
                 }
 
