@@ -12,10 +12,10 @@ import java.util.ArrayDeque
  * path - возможный путь по вершинам
  * next - следующая вершина в пути
  */
-class Path (private val nearestMine: NearestMine, path: List<Int>) {
-            private var path = ArrayDeque<Int>()
-            private var currentPosition: Int = -1
-            private var next: Int = -1
+class Path(private val nearestMine: NearestMine, path: List<Int>) {
+    private var path = ArrayDeque<Int>()
+    private var currentPosition: Int = -1
+    private var next: Int = -1
 
     data class NearestMine(val name: Int, val nearest: Int) {
         override fun hashCode(): Int {
@@ -27,7 +27,7 @@ class Path (private val nearestMine: NearestMine, path: List<Int>) {
             if (other?.javaClass != javaClass) return false
             other as NearestMine
             if (other.nearest == this.name && other.name == this.nearest
-            || other.nearest == this.nearest && other.name == this.name)
+                    || other.nearest == this.nearest && other.name == this.name)
                 return true
             return super.equals(other)
         }
@@ -38,6 +38,11 @@ class Path (private val nearestMine: NearestMine, path: List<Int>) {
         setPathNew(path)
         //currentPosition = this.path.poll() ?: -1
         //next = this.path.poll() ?: -1
+    }
+
+    fun beginRouting() {
+        this.currentPosition = -1
+        this.next = -1
     }
 
     fun checkPath() = path.isEmpty()
@@ -64,7 +69,7 @@ class Path (private val nearestMine: NearestMine, path: List<Int>) {
     /**
      * Перестроить путь
      */
-    fun setPathNew(newPathList: List<Int>){
+    fun setPathNew(newPathList: List<Int>) {
         val newPath = ArrayDeque<Int>()
         newPath.addAll(newPathList)
         path = newPath
